@@ -13,7 +13,11 @@ function createNavProgress() {
 
 function initNavProgress() {
   let bar = document.getElementById("nav-progress") || createNavProgress();
-  let timer: ReturnType<typeof setTimeout>;
+  const timers: ReturnType<typeof setTimeout>[] = [];
+
+  function clearTimers() {
+    while (timers.length) clearTimeout(timers.shift());
+  }
 
   function setProgress(pct: number) {
     bar.style.opacity = "1";
@@ -29,14 +33,14 @@ function initNavProgress() {
 
   document.addEventListener("astro:before-preparation", () => {
     bar = document.getElementById("nav-progress") || createNavProgress();
-    clearTimeout(timer);
+    clearTimers();
     setProgress(20);
-    timer = setTimeout(() => setProgress(45), 300);
-    timer = setTimeout(() => setProgress(60), 600);
+    timers.push(setTimeout(() => setProgress(45), 300));
+    timers.push(setTimeout(() => setProgress(60), 600));
   });
 
   document.addEventListener("astro:after-swap", () => {
-    clearTimeout(timer);
+    clearTimers();
     setProgress(100);
     setTimeout(hide, 150);
   });
