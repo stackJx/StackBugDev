@@ -12,6 +12,11 @@ function createNavProgress() {
 }
 
 function initNavProgress() {
+  // 尊重系统的减弱动效偏好：直接不挂载进度条
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+
   let bar = document.getElementById("nav-progress") || createNavProgress();
   const timers: ReturnType<typeof setTimeout>[] = [];
 
