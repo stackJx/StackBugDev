@@ -4,6 +4,8 @@ permissions:
   contents: read
 
 on:
+  push:
+    branches: [main]
   pull_request:
     types:
       - opened
@@ -16,7 +18,7 @@ jobs:
   build:
     name: Code standards & build
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
 
     strategy:
       matrix:
@@ -40,6 +42,9 @@ jobs:
       - name: "📦 Install dependencies"
         run: pnpm install
 
+      - name: "🎭 Install Playwright Chromium"
+        run: pnpm exec playwright install chromium
+
       - name: "🔎 Lint code"
         run: pnpm run lint
 
@@ -48,3 +53,48 @@ jobs:
 
       - name: "🚀 Build the project"
         run: pnpm run build
+
+      - name: "📤 Upload dist"
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy to Cloudflare Pages
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: "☁️ Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "📦 Install pnpm"
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.1
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: "📦 Install dependencies"
+        run: pnpm install
+
+      - name: "🎭 Install Playwright Chromium"
+        run: pnpm exec playwright install chromium
+
+      - name: "🚀 Build the project"
+        run: pnpm run build
+
+      - name: "🌤️ Deploy to Cloudflare Pages"
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: pages deploy dist --project-name=stackbugdev
