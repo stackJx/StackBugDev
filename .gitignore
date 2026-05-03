@@ -27,4 +27,4 @@ pnpm-debug.log*
 
 public/pagefind
 # cloudflare
-cfst/
+.cfst/
