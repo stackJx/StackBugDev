@@ -36,7 +36,9 @@ const themeColorMap: Record<string, string> = {
 
 function reflectPreference(): void {
   document.firstElementChild?.setAttribute("data-theme", themeValue);
-  document.querySelector("#theme-btn")?.setAttribute("aria-label", themeValue);
+  document
+    .querySelector("#theme-btn")
+    ?.setAttribute("aria-pressed", themeValue === DARK ? "true" : "false");
 
   const color = themeColorMap[themeValue] ?? "#ffffff";
   document
