@@ -114,7 +114,7 @@ const structuredData = {
       href={new URL("rss.xml", Astro.site)}
     />
 
-    <meta name="theme-color" content="" />
+    <meta name="theme-color" content="#f8f9fa" />
 
     {
       // If PUBLIC_GOOGLE_SITE_VERIFICATION is set in the environment variable,
@@ -145,9 +145,13 @@ const structuredData = {
         }
 
         const themeValue = getPreferTheme();
+        const themeColors = { light: "#f8f9fa", dark: "#0f0f0f" };
 
         // Set theme immediately to prevent flash
         document.firstElementChild?.setAttribute("data-theme", themeValue);
+        document
+          .querySelector("meta[name='theme-color']")
+          ?.setAttribute("content", themeColors[themeValue]);
 
         // Export minimal API for external script
         window.theme = {
