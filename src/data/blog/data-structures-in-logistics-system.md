@@ -54,24 +54,24 @@ public class Package {
     private double weight;
     private Dimensions dimensions;
     private PackageStatus status;
-  
+
     // 其他属性和方法...
 }
 
 // 使用ArrayList管理一批待处理包裹
 public class PackageProcessingQueue {
     private List<Package> packages = new ArrayList<>();
-  
+
     // 添加新包裹到处理队列
     public void addPackage(Package pkg) {
         packages.add(pkg);
     }
-  
+
     // 按重量排序包裹，优化装载
     public void sortByWeight() {
         packages.sort(Comparator.comparing(Package::getWeight));
     }
-  
+
     // 按目的地邮编分组，便于规划配送路线
     public Map<String, List<Package>> groupByZipCode() {
         return packages.stream()
@@ -92,17 +92,17 @@ public class PackageProcessingQueue {
 public class PackageTrackingSystem {
     // 使用HashMap存储包裹信息，Key为运单号，Value为包裹对象
     private Map<String, Package> packageDatabase = new HashMap<>();
-  
+
     // 录入新包裹信息
     public void registerPackage(Package pkg) {
         packageDatabase.put(pkg.getTrackingNumber(), pkg);
     }
-  
+
     // 根据运单号查询包裹
     public Package trackPackage(String trackingNumber) {
         return packageDatabase.get(trackingNumber);
     }
-  
+
     // 更新包裹状态
     public void updateStatus(String trackingNumber, PackageStatus newStatus) {
         Package pkg = packageDatabase.get(trackingNumber);
@@ -138,10 +138,10 @@ style E fill:#eeeeee
 public class WarehouseProcessor {
     // 使用队列存储待处理包裹，实现先到先处理
     private Queue<Package> processingQueue = new LinkedList<>();
-  
+
     // 当天需优先处理的特急件
     private Stack<Package> priorityStack = new Stack<>();
-  
+
     // 将包裹加入处理队列
     public void receivePackage(Package pkg) {
         if (pkg.isPriority()) {
@@ -150,14 +150,14 @@ public class WarehouseProcessor {
             processingQueue.offer(pkg); // 普通件排队等待
         }
     }
-  
+
     // 处理下一个包裹
     public Package processNextPackage() {
         // 优先处理特急件
         if (!priorityStack.isEmpty()) {
             return priorityStack.pop();
         }
-      
+
         // 然后处理普通包裹
         return processingQueue.poll();
     }
@@ -201,24 +201,24 @@ public class DistributionNode {
     private NodeType type; // 中心、分拨点、配送站
     private DistributionNode parent;
     private List<DistributionNode> children = new ArrayList<>();
-  
+
     // 添加子节点
     public void addChild(DistributionNode child) {
         children.add(child);
         child.setParent(this);
     }
-  
+
     // 获取配送层级路径
     public List<DistributionNode> getDistributionPath() {
         List<DistributionNode> path = new ArrayList<>();
         DistributionNode current = this;
-      
+
         // 从叶节点(配送站)回溯到根节点(总中心)
         while (current != null) {
             path.add(0, current);
             current = current.getParent();
         }
-      
+
         return path;
     }
 }
@@ -237,36 +237,36 @@ public class AddressTrieNode {
     private boolean isEndOfAddress;
     private String fullAddress;
     private int frequency; // 记录地址使用频率
-  
+
     // 获取所有子节点
     public Map<Character, AddressTrieNode> getChildren() {
         return children;
     }
-  
+
     // 其他方法...
 }
 
 public class AddressAutoComplete {
     private AddressTrieNode root = new AddressTrieNode();
-  
+
     // 添加地址到前缀树
     public void addAddress(String address) {
         AddressTrieNode current = root;
-      
+
         for (char c : address.toCharArray()) {
             current.getChildren().putIfAbsent(c, new AddressTrieNode());
             current = current.getChildren().get(c);
         }
-      
+
         current.setEndOfAddress(true);
         current.setFullAddress(address);
         current.increaseFrequency(); // 增加使用次数
     }
-  
+
     // 根据前缀查找地址建议
     public List<String> suggestAddresses(String prefix, int limit) {
         AddressTrieNode current = root;
-      
+
         // 查找到前缀的最后一个字符
         for (char c : prefix.toCharArray()) {
             if (!current.getChildren().containsKey(c)) {
@@ -274,11 +274,11 @@ public class AddressAutoComplete {
             }
             current = current.getChildren().get(c);
         }
-      
+
         // 收集以该前缀开头的所有地址
         List<AddressTrieNode> matches = new ArrayList<>();
         collectMatches(current, matches);
-      
+
         // 根据频率排序，返回常用地址
         return matches.stream()
             .sorted(Comparator.comparing(AddressTrieNode::getFrequency).reversed())
@@ -286,12 +286,12 @@ public class AddressAutoComplete {
             .map(AddressTrieNode::getFullAddress)
             .collect(Collectors.toList());
     }
-  
+
     private void collectMatches(AddressTrieNode node, List<AddressTrieNode> matches) {
         if (node.isEndOfAddress()) {
             matches.add(node);
         }
-      
+
         for (AddressTrieNode child : node.getChildren().values()) {
             collectMatches(child, matches);
         }
@@ -331,10 +331,10 @@ public class LogisticsNetwork {
         private String name;
         private double latitude;
         private double longitude;
-      
+
         // 构造函数和方法...
     }
-  
+
     // 表示两节点间的连接(运输路线)
     private static class Edge {
         private String sourceId;
@@ -343,71 +343,71 @@ public class LogisticsNetwork {
         private double time;     // 运输时间(小时)
         private double cost;     // 运输成本
         private String transportType; // 运输方式(公路/铁路/航空)
-      
+
         // 构造函数和方法...
     }
-  
+
     // 存储物流网络
     private Map<String, Node> nodes = new HashMap<>();
     private Map<String, Map<String, Edge>> adjacencyMap = new HashMap<>();
-  
+
     // 添加物流节点
     public void addNode(Node node) {
         nodes.put(node.getId(), node);
         adjacencyMap.put(node.getId(), new HashMap<>());
     }
-  
+
     // 添加运输路线
     public void addEdge(Edge edge) {
         adjacencyMap.get(edge.getSourceId()).put(edge.getTargetId(), edge);
     }
-  
+
     // 使用Dijkstra算法查找最佳配送路径
-    public DeliveryRoute findOptimalRoute(String sourceId, String targetId, 
+    public DeliveryRoute findOptimalRoute(String sourceId, String targetId,
                                          RouteOptimizationCriteria criteria) {
         // 优先队列，按照优化标准(时间/成本/距离)排序
         PriorityQueue<RouteNode> queue = new PriorityQueue<>(
             Comparator.comparingDouble(RouteNode::getCost));
-      
+
         // 记录到每个节点的最优成本
         Map<String, Double> costs = new HashMap<>();
         // 记录到每个节点的前驱节点
         Map<String, String> predecessors = new HashMap<>();
         // 已访问的节点
         Set<String> visited = new HashSet<>();
-      
+
         // 初始化
         for (String nodeId : nodes.keySet()) {
             costs.put(nodeId, nodeId.equals(sourceId) ? 0.0 : Double.POSITIVE_INFINITY);
         }
-      
+
         queue.offer(new RouteNode(sourceId, 0.0));
-      
+
         while (!queue.isEmpty()) {
             RouteNode current = queue.poll();
             String currentId = current.getNodeId();
-          
+
             if (currentId.equals(targetId)) {
                 break; // 到达目的地
             }
-          
+
             if (visited.contains(currentId)) {
                 continue;
             }
-          
+
             visited.add(currentId);
-          
+
             // 检查所有相邻节点
             for (Edge edge : adjacencyMap.get(currentId).values()) {
                 String neighborId = edge.getTargetId();
-              
+
                 if (visited.contains(neighborId)) {
                     continue;
                 }
-              
+
                 // 根据优化标准计算成本
                 double newCost = costs.get(currentId) + getEdgeCost(edge, criteria);
-              
+
                 if (newCost < costs.get(neighborId)) {
                     costs.put(neighborId, newCost);
                     predecessors.put(neighborId, currentId);
@@ -415,49 +415,49 @@ public class LogisticsNetwork {
                 }
             }
         }
-      
+
         // 构建路径
         return buildRoute(sourceId, targetId, predecessors);
     }
-  
+
     // 根据优化标准获取边的成本
     private double getEdgeCost(Edge edge, RouteOptimizationCriteria criteria) {
         switch (criteria) {
             case DISTANCE: return edge.getDistance();
             case TIME: return edge.getTime();
             case COST: return edge.getCost();
-            case BALANCED: 
+            case BALANCED:
                 // 综合考虑距离、时间和成本
                 return edge.getDistance() * 0.3 + edge.getTime() * 0.4 + edge.getCost() * 0.3;
             default: return edge.getDistance();
         }
     }
-  
+
     // 根据前驱节点构建路径
     private DeliveryRoute buildRoute(String sourceId, String targetId, Map<String, String> predecessors) {
         // 实现代码...
     }
-  
+
     // 路径节点（用于Dijkstra算法）
     private static class RouteNode {
         private String nodeId;
         private double cost;
-      
+
         // 构造函数和getter...
     }
-  
+
     // 路径优化标准
     public enum RouteOptimizationCriteria {
         DISTANCE, TIME, COST, BALANCED
     }
-  
+
     // 配送路线结果
     public static class DeliveryRoute {
         private List<String> path;
         private double totalDistance;
         private double totalTime;
         private double totalCost;
-      
+
         // 构造函数和方法...
     }
 }
@@ -500,34 +500,34 @@ style DC fill:#f9d5e5
 ```java
 public class VehicleRoutingProblemSolver {
     // 使用贪心算法解决VRP问题
-    public List<VehicleRoute> solveVRP(DeliveryCenter depot, 
+    public List<VehicleRoute> solveVRP(DeliveryCenter depot,
                                      List<DeliveryPoint> deliveryPoints,
                                      int availableVehicles,
                                      int maxCapacityPerVehicle) {
         // 按距离排序配送点
         List<DeliveryPoint> sortedPoints = new ArrayList<>(deliveryPoints);
-        sortedPoints.sort(Comparator.comparingDouble(p -> 
+        sortedPoints.sort(Comparator.comparingDouble(p ->
             calculateDistance(depot.getLocation(), p.getLocation())));
-      
+
         List<VehicleRoute> routes = new ArrayList<>();
-      
+
         // 初始化车辆路线
         for (int i = 0; i < availableVehicles; i++) {
             routes.add(new VehicleRoute(depot));
         }
-      
+
         // 为每个配送点分配车辆
         for (DeliveryPoint point : sortedPoints) {
             // 找到最适合的车辆
             VehicleRoute bestRoute = null;
             double minDetour = Double.POSITIVE_INFINITY;
-          
+
             for (VehicleRoute route : routes) {
                 // 检查车辆容量约束
                 if (route.getCurrentCapacity() + point.getPackageSize() > maxCapacityPerVehicle) {
                     continue;
                 }
-              
+
                 // 计算绕道成本
                 double detourCost = calculateDetourCost(route, point);
                 if (detourCost < minDetour) {
@@ -535,7 +535,7 @@ public class VehicleRoutingProblemSolver {
                     bestRoute = route;
                 }
             }
-          
+
             // 如果找到合适车辆，添加配送点
             if (bestRoute != null) {
                 bestRoute.addDeliveryPoint(point);
@@ -544,56 +544,56 @@ public class VehicleRoutingProblemSolver {
                 System.out.println("无法为配送点分配车辆: " + point.getId());
             }
         }
-      
+
         return routes;
     }
-  
+
     // 计算将配送点添加到路线中的绕道成本
     private double calculateDetourCost(VehicleRoute route, DeliveryPoint newPoint) {
         // 如果路线为空，直接计算往返距离
         if (route.getPoints().isEmpty()) {
             return 2 * calculateDistance(route.getDepot().getLocation(), newPoint.getLocation());
         }
-      
+
         // 否则，计算添加这个点后的路线长度增量
         // 实际实现可能会复杂得多，这里简化处理
         DeliveryPoint lastPoint = route.getPoints().get(route.getPoints().size() - 1);
-      
+
         double currentDistance = calculateDistance(lastPoint.getLocation(), route.getDepot().getLocation());
-        double newDistance = calculateDistance(lastPoint.getLocation(), newPoint.getLocation()) + 
+        double newDistance = calculateDistance(lastPoint.getLocation(), newPoint.getLocation()) +
                             calculateDistance(newPoint.getLocation(), route.getDepot().getLocation());
-      
+
         return newDistance - currentDistance;
     }
-  
+
     // 计算两点间距离
     private double calculateDistance(Location a, Location b) {
         // 使用直线距离或实际道路距离
-        return Math.sqrt(Math.pow(a.getLatitude() - b.getLatitude(), 2) + 
+        return Math.sqrt(Math.pow(a.getLatitude() - b.getLatitude(), 2) +
                         Math.pow(a.getLongitude() - b.getLongitude(), 2));
     }
-  
+
     // 配送路线
     public static class VehicleRoute {
         private DeliveryCenter depot;
         private List<DeliveryPoint> points = new ArrayList<>();
         private double currentCapacity = 0;
-      
+
         // 构造函数和方法...
-      
+
         public void addDeliveryPoint(DeliveryPoint point) {
             points.add(point);
             currentCapacity += point.getPackageSize();
         }
-      
+
         public double getCurrentCapacity() {
             return currentCapacity;
         }
-      
+
         public List<DeliveryPoint> getPoints() {
             return points;
         }
-      
+
         public DeliveryCenter getDepot() {
             return depot;
         }
@@ -616,17 +616,17 @@ public class PackageDispatcher {
     private PriorityQueue<DeliveryTask> deliveryQueue = new PriorityQueue<>(
         Comparator.comparingInt(DeliveryTask::getPriority).reversed()
     );
-  
+
     // 添加配送任务
     public void addDeliveryTask(DeliveryTask task) {
         deliveryQueue.offer(task);
     }
-  
+
     // 获取下一个要处理的任务
     public DeliveryTask getNextTask() {
         return deliveryQueue.poll();
     }
-  
+
     // 动态调整任务优先级
     public void updateTaskPriority(String taskId, int newPriority) {
         // 在实际应用中，这需要更复杂的实现
@@ -639,30 +639,30 @@ public class PackageDispatcher {
             }
             tasks.add(task);
         }
-      
+
         deliveryQueue.addAll(tasks);
     }
-  
+
     // 配送任务
     public static class DeliveryTask {
         private String id;
         private Package pkg;
         private int priority; // 优先级：1=标准，2=加急，3=特急
-      
+
         // 构造函数和方法...
-      
+
         public int getPriority() {
             return priority;
         }
-      
+
         public void setPriority(int priority) {
             this.priority = priority;
         }
-      
+
         public String getId() {
             return id;
         }
-      
+
         public Package getPackage() {
             return pkg;
         }
@@ -680,55 +680,55 @@ public class PackageProcessingFilter {
     private BitSet bitSet;
     private int bitSetSize;
     private int hashFunctionCount;
-  
+
     public PackageProcessingFilter(int expectedPackages, double falsePositiveProbability) {
         // 计算所需的位数和哈希函数数量
         this.bitSetSize = calculateBitSetSize(expectedPackages, falsePositiveProbability);
         this.hashFunctionCount = calculateHashFunctionCount(bitSetSize, expectedPackages);
         this.bitSet = new BitSet(bitSetSize);
     }
-  
+
     // 标记包裹为已处理
     public void markAsProcessed(String trackingNumber) {
         int[] hashes = createHashes(trackingNumber);
-      
+
         for (int hash : hashes) {
             bitSet.set(Math.abs(hash % bitSetSize), true);
         }
     }
-  
+
     // 检查包裹是否可能已处理
     public boolean mightBeProcessed(String trackingNumber) {
         int[] hashes = createHashes(trackingNumber);
-      
+
         for (int hash : hashes) {
             if (!bitSet.get(Math.abs(hash % bitSetSize))) {
                 return false; // 肯定未处理
             }
         }
-      
+
         return true; // 可能已处理
     }
-  
+
     // 创建哈希值数组
     private int[] createHashes(String trackingNumber) {
         int[] result = new int[hashFunctionCount];
         int hash1 = trackingNumber.hashCode();
         int hash2 = hash1 >>> 16;
-      
+
         for (int i = 0; i < hashFunctionCount; i++) {
             result[i] = hash1 + i * hash2;
         }
-      
+
         return result;
     }
-  
+
     // 计算布隆过滤器所需位数
     private int calculateBitSetSize(int expectedPackages, double falsePositiveProbability) {
-        return (int) Math.ceil(-(expectedPackages * Math.log(falsePositiveProbability)) / 
+        return (int) Math.ceil(-(expectedPackages * Math.log(falsePositiveProbability)) /
                                (Math.log(2) * Math.log(2)));
     }
-  
+
     // 计算所需哈希函数数量
     private int calculateHashFunctionCount(int bitSetSize, int expectedPackages) {
         return (int) Math.round((bitSetSize / expectedPackages) * Math.log(2));
@@ -751,7 +751,7 @@ public class SmartLogisticsSystem {
     private VehicleRoutingProblemSolver vrpSolver;         // 图算法
     private PackageDispatcher dispatcher;                  // 优先队列
     private PackageProcessingFilter processingFilter;      // 布隆过滤器
-  
+
     public SmartLogisticsSystem() {
         this.trackingSystem = new PackageTrackingSystem();
         this.addressAutoComplete = new AddressAutoComplete();
@@ -759,17 +759,17 @@ public class SmartLogisticsSystem {
         this.vrpSolver = new VehicleRoutingProblemSolver();
         this.dispatcher = new PackageDispatcher();
         this.processingFilter = new PackageProcessingFilter(1_000_000, 0.001);
-      
+
         // 初始化系统...
     }
-  
+
     // 构建物流网络
     private LogisticsNetwork buildLogisticsNetwork() {
         LogisticsNetwork network = new LogisticsNetwork();
         // 添加物流节点和路线...
         return network;
     }
-  
+
     // 处理新包裹
     public void processNewPackage(Package pkg) {
         // 1. 验证并自动补全地址
@@ -778,34 +778,34 @@ public class SmartLogisticsSystem {
             // 更新为规范化地址
             pkg.getReceiverAddress().updateFromString(suggestedAddress);
         }
-      
+
         // 2. 注册包裹到跟踪系统
         trackingSystem.registerPackage(pkg);
-      
+
         // 3. 计算最优配送路线
         DeliveryRoute route = calculateDeliveryRoute(pkg);
         pkg.setPlannedRoute(route);
-      
+
         // 4. 创建配送任务并加入调度队列
         DeliveryTask task = createDeliveryTask(pkg);
         dispatcher.addDeliveryTask(task);
-      
+
         // 5. 标记包裹为已处理
         processingFilter.markAsProcessed(pkg.getTrackingNumber());
     }
-  
+
     // 验证并自动补全地址
     private String validateAndCompleteAddress(String address) {
         // 使用前缀树查找最匹配的标准地址
         List<String> suggestions = addressAutoComplete.suggestAddresses(address, 1);
         return suggestions.isEmpty() ? null : suggestions.get(0);
     }
-  
+
     // 计算配送路线
     private DeliveryRoute calculateDeliveryRoute(Package pkg) {
         // 找到最近的物流中心
         String nearestDepot = findNearestDepot(pkg.getReceiverAddress());
-      
+
         // 计算从该中心到目的地的最优路线
         return logisticsNetwork.findOptimalRoute(
             nearestDepot,
@@ -813,14 +813,14 @@ public class SmartLogisticsSystem {
             LogisticsNetwork.RouteOptimizationCriteria.BALANCED
         );
     }
-  
+
     // 找到最近的物流中心
     private String findNearestDepot(Address address) {
         // 根据地址查找最近的物流中心
         // 简化实现...
         return "DEPOT_001";
     }
-  
+
     // 创建配送任务
     private DeliveryTask createDeliveryTask(Package pkg) {
         int priority = calculatePriority(pkg);
@@ -831,7 +831,7 @@ public class SmartLogisticsSystem {
         );
         return task;
     }
-  
+
     // 计算包裹优先级
     private int calculatePriority(Package pkg) {
         // 根据包裹类型、客户等级、时效要求等计算优先级
@@ -839,29 +839,29 @@ public class SmartLogisticsSystem {
         if (pkg.isVIP()) return 2;
         return 1;
     }
-  
+
     // 生成任务ID
     private String generateTaskId() {
         return "TASK_" + System.currentTimeMillis();
     }
-  
+
     // 根据运单号查询包裹状态
     public PackageStatus trackPackage(String trackingNumber) {
         // 首先用布隆过滤器快速检查
         if (!processingFilter.mightBeProcessed(trackingNumber)) {
             return PackageStatus.NOT_FOUND;
         }
-      
+
         // 然后查询详细信息
         Package pkg = trackingSystem.trackPackage(trackingNumber);
         return pkg != null ? pkg.getStatus() : PackageStatus.NOT_FOUND;
     }
-  
+
     // 规划当天配送路线
     public List<VehicleRoute> planDailyDeliveries(DeliveryCenter depot, int availableVehicles) {
         // 获取当天需要配送的所有包裹
         List<DeliveryTask> todaysTasks = getTodaysDeliveryTasks();
-      
+
         // 提取配送点
         List<DeliveryPoint> deliveryPoints = todaysTasks.stream()
             .map(task -> new DeliveryPoint(
@@ -869,11 +869,11 @@ public class SmartLogisticsSystem {
                 task.getPackage().getReceiverAddress().getLocation(),
                 estimatePackageSize(task.getPackage())))
             .collect(Collectors.toList());
-      
+
         // 使用VRP求解器规划路线
         return vrpSolver.solveVRP(depot, deliveryPoints, availableVehicles, 1000);
     }
-  
+
     // 获取当天配送任务
     private List<DeliveryTask> getTodaysDeliveryTasks() {
         List<DeliveryTask> tasks = new ArrayList<>();
@@ -882,7 +882,7 @@ public class SmartLogisticsSystem {
         }
         return tasks;
     }
-  
+
     // 估算包裹大小（用于车辆容量规划）
     private double estimatePackageSize(Package pkg) {
         return pkg.getWeight() * pkg.getDimensions().getVolume() / 5000.0; // 简化估算

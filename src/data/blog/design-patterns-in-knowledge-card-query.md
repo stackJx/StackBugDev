@@ -100,12 +100,12 @@ public interface KnowledgeCardStrategy {
      * 查询知识点卡片数据
      */
     IPage<?> getKnowledgeCard(YgResourceReq req);
-  
+
     /**
      * 获取策略标识
      */
     String getStrategyKey();
-  
+
     /**
      * 检查是否支持指定的学段学科组合
      */
@@ -122,7 +122,7 @@ public interface KnowledgeCardStrategy {
 
 ```java
 public abstract class AbstractKnowledgeCardStrategy implements KnowledgeCardStrategy {
-  
+
     @Override
     public final IPage<?> getKnowledgeCard(YgResourceReq req) {
         // 1. 参数验证
@@ -148,7 +148,7 @@ public abstract class AbstractKnowledgeCardStrategy implements KnowledgeCardStra
 ```java
 protected String getChapterIdFromRequest(YgResourceReq req) {
     // req.chapterId 是母树ID，需要找到它绑定的子树ID
-  
+
     try {
         // 步骤1：通过请求参数定位具体教材
         BooksSubParam bookParam = buildBooksSubParam(req);
@@ -164,16 +164,16 @@ protected String getChapterIdFromRequest(YgResourceReq req) {
                     .eq(ChapterTreeSub::getPress, booksSub.getPress())
                     .eq(ChapterTreeSub::getVolume, booksSub.getVolume())
                     .orderByAsc(ChapterTreeSub::getSort);
-        
+
             List<ChapterTreeSub> chapterTrees = chapterTreeSubService.list(wrapper);
-        
+
             // 步骤3：通过 bc_res_chapter 表查找母树与子树的绑定关系
             for (ChapterTreeSub chapterTree : chapterTrees) {
                 LambdaQueryWrapper<BcResChapter> resChapterWrapper = new LambdaQueryWrapper<>();
                 resChapterWrapper.eq(BcResChapter::getResourceType, 3) // 3-子树章节
                                 .eq(BcResChapter::getResourceId, chapterTree.getId())
                                 .eq(BcResChapter::getChapterId, req.getChapterId());
-            
+
                 if (bcResChapterMapper.selectCount(resChapterWrapper) > 0) {
                     return chapterTree.getId();
                 }
@@ -194,7 +194,7 @@ protected List<BooksStruct> queryBooksStructList(String chapterId) {
     if (StrUtil.isBlank(chapterId)) {
         return new ArrayList<>();
     }
-  
+
     // 通过章节ID查询关联的 BooksStruct 列表
     return booksStructService.lambdaQuery()
             .eq(BooksStruct::getChapterParentId, chapterId)
@@ -251,24 +251,24 @@ public enum KnowledgeCardStrategyEnum {
      * Spring组件名称 (用于@Component注解)
      */
     private final String componentName;
-  
+
     /**
      * 根据学段和学科编码查找对应的策略
      */
     public static Optional<KnowledgeCardStrategyEnum> findByCode(String periodCode, String subjectCode) {
         return Arrays.stream(values())
-                .filter(strategy -> strategy.periodCode.equals(periodCode) 
+                .filter(strategy -> strategy.periodCode.equals(periodCode)
                                  && strategy.subjectCode.equals(subjectCode))
                 .findFirst();
     }
-  
+
     /**
      * 获取策略标识（格式: period_subject）
      */
     public String getStrategyKey() {
         return periodCode + "_" + subjectCode;
     }
-  
+
     /**
      * 检查是否支持指定的学段学科组合
      */
@@ -287,7 +287,7 @@ public enum KnowledgeCardStrategyEnum {
 @Component("primary_chinese")
 public class PrimaryChineseKnowledgeCardStrategy extends AbstractKnowledgeCardStrategy {
 
-    private static final KnowledgeCardStrategyEnum STRATEGY_CONFIG = 
+    private static final KnowledgeCardStrategyEnum STRATEGY_CONFIG =
         KnowledgeCardStrategyEnum.PRIMARY_CHINESE;
 
     @Override
@@ -301,33 +301,33 @@ public class PrimaryChineseKnowledgeCardStrategy extends AbstractKnowledgeCardSt
     }
 
     @Override
-    protected IPage<?> queryAndProcessKnowledgeCards(List<BooksStruct> booksStructList, 
+    protected IPage<?> queryAndProcessKnowledgeCards(List<BooksStruct> booksStructList,
                                                      YgResourceReq req) {
         // 从 BooksStruct 列表中提取 structId
         List<String> structIds = booksStructList.stream()
                 .map(BooksStruct::getId)
                 .collect(Collectors.toList());
-    
+
         if (CollUtil.isEmpty(structIds)) {
             return new Page<>();
         }
-    
+
         // 基于 structId 查询 MongoDB 中的小学语文结构化数据
         Criteria criteria = new Criteria();
         criteria.where("structId").in(structIds);
         Query query = new Query(criteria);
-    
-        List<MongoBooksStructChinesePri> mongoData = 
+
+        List<MongoBooksStructChinesePri> mongoData =
             mongoTemplate.find(query, MongoBooksStructChinesePri.class);
-    
+
         // 处理和转换数据为小学语文特定的格式
         List<GetStructKnowledgeCardPriChineseVo> result = processChineseData(mongoData);
-    
+
         IPage<Object> pageResult = new Page<>(1, 10000);
         pageResult.setRecords((List<Object>) (Object) result);
         return pageResult;
     }
-  
+
     private List<GetStructKnowledgeCardPriChineseVo> processChineseData(
             List<MongoBooksStructChinesePri> mongoData) {
         // 具体的数据处理逻辑...
@@ -343,7 +343,7 @@ public class PrimaryChineseKnowledgeCardStrategy extends AbstractKnowledgeCardSt
 @Component("middle_math")
 public class MiddleMathKnowledgeCardStrategy extends AbstractKnowledgeCardStrategy {
 
-    private static final KnowledgeCardStrategyEnum STRATEGY_CONFIG = 
+    private static final KnowledgeCardStrategyEnum STRATEGY_CONFIG =
         KnowledgeCardStrategyEnum.MIDDLE_MATH;
 
     @Override
@@ -363,57 +363,57 @@ public class MiddleMathKnowledgeCardStrategy extends AbstractKnowledgeCardStrate
     }
 
     @Override
-    protected IPage<?> queryAndProcessKnowledgeCards(List<BooksStruct> booksStructList, 
+    protected IPage<?> queryAndProcessKnowledgeCards(List<BooksStruct> booksStructList,
                                                      YgResourceReq req) {
         // 中学数学有知识点和题型两种业务类型
         List<Object> result = new ArrayList<>();
-    
+
         // 从 BooksStruct 中提取 structId
         List<String> structIds = booksStructList.stream()
                 .map(BooksStruct::getId)
                 .collect(Collectors.toList());
-    
+
         if (CollUtil.isNotEmpty(structIds)) {
             // 处理知识点类型（businessType = "1"）
             result.addAll(processKnowledgeType(structIds));
-        
-            // 处理题型/考点类型（businessType = "4"）  
+
+            // 处理题型/考点类型（businessType = "4"）
             result.addAll(processMethodType(structIds));
         }
-    
+
         // 返回组合结果
         IPage<Object> pageResult = new Page<>(1, 10000);
         pageResult.setRecords(result);
         return pageResult;
     }
-  
+
     private List<GetStructKnowledgeCardMidMathKnowVo> processKnowledgeType(List<String> structIds) {
         // 查询 MongoBooksStructMathMid 中的知识点数据
         Criteria criteria = new Criteria();
         criteria.where("structId").in(structIds)
                 .and("knowledge").exists(true);
         Query query = new Query(criteria);
-    
-        List<MongoBooksStructMathMid> mongoData = 
+
+        List<MongoBooksStructMathMid> mongoData =
             mongoTemplate.find(query, MongoBooksStructMathMid.class);
-    
+
         // 转换为 GetStructKnowledgeCardMidMathKnowVo 格式
         return mongoData.stream()
                 .flatMap(data -> data.getKnowledge().stream())
                 .map(this::convertToKnowledgeVo)
                 .collect(Collectors.toList());
     }
-  
+
     private List<GetStructKnowledgeCardMidMathMethodVo> processMethodType(List<String> structIds) {
         // 查询 MongoBooksStructMathMid 中的方法数据
         Criteria criteria = new Criteria();
         criteria.where("structId").in(structIds)
                 .and("method").exists(true);
         Query query = new Query(criteria);
-    
-        List<MongoBooksStructMathMid> mongoData = 
+
+        List<MongoBooksStructMathMid> mongoData =
             mongoTemplate.find(query, MongoBooksStructMathMid.class);
-    
+
         // 转换为 GetStructKnowledgeCardMidMathMethodVo 格式
         return mongoData.stream()
                 .flatMap(data -> data.getMethod().stream())
@@ -433,9 +433,9 @@ public class MiddleMathKnowledgeCardStrategy extends AbstractKnowledgeCardStrate
 ```java
 @Service
 public class KnowledgeCardService {
-  
+
     private final Map<String, KnowledgeCardStrategy> strategies;
-  
+
     // Spring 自动注入所有策略实现（IoC容器充当工厂角色）
     public KnowledgeCardService(List<KnowledgeCardStrategy> strategyList) {
         this.strategies = strategyList.stream()
@@ -444,19 +444,19 @@ public class KnowledgeCardService {
                     Function.identity()
                 ));
     }
-  
+
     // 简单工厂方法：根据参数选择策略
     public IPage<?> getKnowledgeCard(YgResourceReq req) {
         String strategyKey = req.getPeriod() + "_" + req.getSubject();
         KnowledgeCardStrategy strategy = strategies.get(strategyKey);
-    
+
         if (strategy == null) {
             throw new BusinessException("不支持的学段学科组合: " + strategyKey);
         }
-    
+
         return strategy.getKnowledgeCard(req);
     }
-  
+
     /**
      * 获取所有支持的学段学科组合
      */
@@ -474,10 +474,10 @@ public class KnowledgeCardService {
 @RequestMapping("/api/knowledge-card")
 @Api(tags = "知识点卡片查询接口")
 public class KnowledgeCardController {
-  
+
     @Autowired
     private KnowledgeCardService knowledgeCardService;
-  
+
     @PostMapping("/query")
     @ApiOperation("查询知识点卡片")
     public Result<IPage<?>> queryKnowledgeCard(@RequestBody @Valid YgResourceReq req) {
@@ -488,7 +488,7 @@ public class KnowledgeCardController {
             return Result.error(e.getMessage());
         }
     }
-  
+
     @GetMapping("/supported-combinations")
     @ApiOperation("获取支持的学段学科组合")
     public Result<List<String>> getSupportedCombinations() {
@@ -537,12 +537,12 @@ HIGH_PHYSICS("3", "06", "高中物理", "high_physics"),
 ```java
 @Component("high_physics")
 public class HighPhysicsKnowledgeCardStrategy extends AbstractKnowledgeCardStrategy {
-  
-    private static final KnowledgeCardStrategyEnum STRATEGY_CONFIG = 
+
+    private static final KnowledgeCardStrategyEnum STRATEGY_CONFIG =
         KnowledgeCardStrategyEnum.HIGH_PHYSICS;
-    
+
     @Override
-    protected IPage<?> queryAndProcessKnowledgeCards(List<BooksStruct> booksStructList, 
+    protected IPage<?> queryAndProcessKnowledgeCards(List<BooksStruct> booksStructList,
                                                      YgResourceReq req) {
         // 高中物理的具体逻辑
         return processPhysicsData(booksStructList, req);
@@ -569,13 +569,13 @@ public class HighPhysicsKnowledgeCardStrategy extends AbstractKnowledgeCardStrat
 @ExtendWith(SpringExtension.class)
 @MockitoExtension
 class PrimaryChineseKnowledgeCardStrategyTest {
-  
+
     @InjectMocks
     private PrimaryChineseKnowledgeCardStrategy strategy;
-  
+
     @Mock
     private MongoTemplate mongoTemplate;
-  
+
     @Test
     void should_support_primary_chinese() {
         // 测试策略支持逻辑
@@ -583,13 +583,13 @@ class PrimaryChineseKnowledgeCardStrategyTest {
         assertFalse(strategy.supports("2", "01"));
         assertFalse(strategy.supports("1", "02"));
     }
-  
+
     @Test
     void should_return_correct_strategy_key() {
         // 测试策略键生成
         assertEquals("1_01", strategy.getStrategyKey());
     }
-  
+
     @Test
     void should_process_knowledge_cards_correctly() {
         // 准备测试数据
@@ -598,26 +598,26 @@ class PrimaryChineseKnowledgeCardStrategyTest {
             createMockBooksStruct("struct2")
         );
         YgResourceReq req = createMockRequest();
-    
+
         // 模拟MongoDB查询结果
         when(mongoTemplate.find(any(Query.class), eq(MongoBooksStructChinesePri.class)))
                 .thenReturn(createMockMongoData());
-    
+
         // 执行测试
         IPage<?> result = strategy.queryAndProcessKnowledgeCards(booksStructList, req);
-    
+
         // 验证结果
         assertNotNull(result);
         assertFalse(result.getRecords().isEmpty());
         verify(mongoTemplate).find(any(Query.class), eq(MongoBooksStructChinesePri.class));
     }
-  
+
     @Test
     void should_handle_empty_books_struct_list() {
         // 测试空列表处理
         YgResourceReq req = createMockRequest();
         IPage<?> result = strategy.queryAndProcessKnowledgeCards(new ArrayList<>(), req);
-    
+
         assertNotNull(result);
         assertTrue(result.getRecords().isEmpty());
     }
@@ -632,14 +632,14 @@ class PrimaryChineseKnowledgeCardStrategyTest {
 ```java
 @Component
 public class KnowledgeCardStrategyCache {
-  
+
     private final Map<String, KnowledgeCardStrategy> strategyCache = new ConcurrentHashMap<>();
     private final ApplicationContext applicationContext;
-  
+
     public KnowledgeCardStrategyCache(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
-  
+
     @PostConstruct
     public void initCache() {
         // 应用启动时预热缓存
@@ -647,17 +647,17 @@ public class KnowledgeCardStrategyCache {
               .parallel()
               .forEach(config -> {
                   try {
-                      KnowledgeCardStrategy strategy = 
+                      KnowledgeCardStrategy strategy =
                           applicationContext.getBean(config.getComponentName(), KnowledgeCardStrategy.class);
                       strategyCache.put(config.getStrategyKey(), strategy);
                   } catch (Exception e) {
                       log.warn("Failed to load strategy: {}", config.getComponentName(), e);
                   }
               });
-    
+
         log.info("Loaded {} knowledge card strategies", strategyCache.size());
     }
-  
+
     public KnowledgeCardStrategy getStrategy(String strategyKey) {
         return strategyCache.get(strategyKey);
     }
@@ -673,7 +673,7 @@ protected List<BooksStruct> queryBooksStructList(List<String> chapterIds) {
     if (CollUtil.isEmpty(chapterIds)) {
         return new ArrayList<>();
     }
-  
+
     // 使用IN查询替代多次单独查询
     return booksStructService.lambdaQuery()
             .in(BooksStruct::getChapterParentId, chapterIds)
@@ -683,7 +683,7 @@ protected List<BooksStruct> queryBooksStructList(List<String> chapterIds) {
 }
 
 // MongoDB查询优化
-protected List<MongoBooksStructMath> queryMongoData(List<String> structIds, 
+protected List<MongoBooksStructMath> queryMongoData(List<String> structIds,
                                                    List<String> businessIds) {
     // 构建复合索引查询
     Criteria criteria = new Criteria();
@@ -691,14 +691,14 @@ protected List<MongoBooksStructMath> queryMongoData(List<String> structIds,
         Criteria.where("structId").in(structIds),
         Criteria.where("example._id").in(businessIds)
     );
-  
+
     Query query = new Query(criteria);
     // 只查询需要的字段，减少网络传输
     query.fields()
          .include("structId")
          .include("example")
          .exclude("_id");
-  
+
     return mongoTemplate.find(query, MongoBooksStructMath.class);
 }
 
@@ -709,15 +709,15 @@ protected List<MongoBooksStructMath> queryMongoData(List<String> structIds,
 ```java
 @Service
 public class CachedKnowledgeCardService {
-  
+
     private final KnowledgeCardService knowledgeCardService;
     private final RedisTemplate<String, Object> redisTemplate;
-  
+
     @Cacheable(value = "knowledge-card", key = "#req.hashCode()", unless = "#result.records.isEmpty()")
     public IPage<?> getKnowledgeCard(YgResourceReq req) {
         return knowledgeCardService.getKnowledgeCard(req);
     }
-  
+
     @CacheEvict(value = "knowledge-card", allEntries = true)
     public void clearCache() {
         // 清除所有缓存
@@ -734,29 +734,29 @@ public class CachedKnowledgeCardService {
 @Aspect
 @Component
 public class KnowledgeCardStrategyMonitor {
-  
+
     private final MeterRegistry meterRegistry;
-  
+
     @Around("execution(* com.bcbook.modules.yg.strategy.impl.*.*(..))")
     public Object monitorStrategyExecution(ProceedingJoinPoint joinPoint) throws Throwable {
         String strategyName = joinPoint.getTarget().getClass().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
-    
+
         Timer.Sample sample = Timer.start(meterRegistry);
         try {
             Object result = joinPoint.proceed();
-        
+
             // 记录成功执行
-            meterRegistry.counter("knowledge.card.strategy.success", 
-                               "strategy", strategyName, 
+            meterRegistry.counter("knowledge.card.strategy.success",
+                               "strategy", strategyName,
                                "method", methodName)
                         .increment();
-        
+
             return result;
         } catch (Exception e) {
             // 记录失败执行
-            meterRegistry.counter("knowledge.card.strategy.error", 
-                               "strategy", strategyName, 
+            meterRegistry.counter("knowledge.card.strategy.error",
+                               "strategy", strategyName,
                                "method", methodName,
                                "error", e.getClass().getSimpleName())
                         .increment();
@@ -778,22 +778,22 @@ public class KnowledgeCardStrategyMonitor {
 ```java
 @Component
 public class KnowledgeCardStrategyLogger {
-  
+
     private static final Logger log = LoggerFactory.getLogger(KnowledgeCardStrategyLogger.class);
-  
-    public void logStrategyExecution(String strategyKey, YgResourceReq req, 
+
+    public void logStrategyExecution(String strategyKey, YgResourceReq req,
                                    long executionTime, int resultCount) {
         log.info("Strategy execution completed. " +
                 "strategy={}, period={}, subject={}, chapterId={}, " +
-                "executionTime={}ms, resultCount={}", 
-                strategyKey, req.getPeriod(), req.getSubject(), 
+                "executionTime={}ms, resultCount={}",
+                strategyKey, req.getPeriod(), req.getSubject(),
                 req.getChapterId(), executionTime, resultCount);
     }
-  
+
     public void logStrategyError(String strategyKey, YgResourceReq req, Exception e) {
         log.error("Strategy execution failed. " +
-                 "strategy={}, period={}, subject={}, chapterId={}, error={}", 
-                 strategyKey, req.getPeriod(), req.getSubject(), 
+                 "strategy={}, period={}, subject={}, chapterId={}, error={}",
+                 strategyKey, req.getPeriod(), req.getSubject(),
                  req.getChapterId(), e.getMessage(), e);
     }
 }
@@ -807,23 +807,23 @@ public class KnowledgeCardStrategyLogger {
 ```java
 @Service
 public class DynamicStrategyLoader {
-  
+
     public void loadStrategy(String jarPath, String strategyClassName) {
         // 动态加载外部JAR包中的策略实现
         URLClassLoader classLoader = new URLClassLoader(new URL[]{new File(jarPath).toURI().toURL()});
         Class<?> strategyClass = classLoader.loadClass(strategyClassName);
-    
+
         // 注册到Spring容器
         registerStrategy(strategyClass);
     }
-  
+
     private void registerStrategy(Class<?> strategyClass) {
         // 动态注册Bean到Spring容器
-        DefaultListableBeanFactory beanFactory = 
+        DefaultListableBeanFactory beanFactory =
             (DefaultListableBeanFactory) applicationContext.getAutowireCapableBeanFactory();
-    
+
         beanFactory.registerBeanDefinition(
-            strategyClass.getSimpleName(), 
+            strategyClass.getSimpleName(),
             BeanDefinitionBuilder.rootBeanDefinition(strategyClass).getBeanDefinition()
         );
     }
@@ -836,18 +836,18 @@ public class DynamicStrategyLoader {
 ```java
 @Component("combined_strategy")
 public class CombinedKnowledgeCardStrategy extends AbstractKnowledgeCardStrategy {
-  
+
     private final List<KnowledgeCardStrategy> subStrategies;
-  
+
     @Override
-    protected IPage<?> queryAndProcessKnowledgeCards(List<BooksStruct> booksStructList, 
+    protected IPage<?> queryAndProcessKnowledgeCards(List<BooksStruct> booksStructList,
                                                      YgResourceReq req) {
         // 并行执行多个子策略
         List<CompletableFuture<IPage<?>>> futures = subStrategies.stream()
                 .map(strategy -> CompletableFuture.supplyAsync(
                     () -> strategy.queryAndProcessKnowledgeCards(booksStructList, req)))
                 .collect(Collectors.toList());
-    
+
         // 合并所有子策略的结果
         return mergeResults(futures);
     }

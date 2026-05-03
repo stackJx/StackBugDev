@@ -86,14 +86,14 @@ server {
 确保 Vue 应用中使用的是 history 模式：
 
 ```js
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from "vue-router";
 
 const router = createRouter({
   history: createWebHistory(), // 使用 history 模式
   routes: [
     // 你的路由配置
-  ]
-})
+  ],
+});
 ```
 
 ## 部署步骤

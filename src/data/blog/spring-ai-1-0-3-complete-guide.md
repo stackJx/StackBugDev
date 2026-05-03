@@ -64,7 +64,6 @@ spring:
         options:
           model: gpt-4o-mini
           temperature: 0.7
-
 ```
 
 ## 二、Chat Models：统一的多模型 API
@@ -150,7 +149,7 @@ public class ChatModelConfig {
 
 Function Calling 让 AI 能够自主调用外部工具来完成任务。比如：
 
-- 用户问"帮我计算 123 * 456" → AI 调用计算器工具
+- 用户问"帮我计算 123 \* 456" → AI 调用计算器工具
 - 用户问"北京今天天气怎么样？" → AI 调用天气 API 获取实时数据
 
 ### 实现天气查询工具
@@ -284,9 +283,8 @@ spring:
         jdbc-url: jdbc:postgresql://localhost:5432/vectordb
         username: postgres
         password: postgres
-        dimensions: 1536  # OpenAI Embeddings 维度
+        dimensions: 1536 # OpenAI Embeddings 维度
         distance-type: COSINE_DISTANCE
-
 ```
 
 第三步：配置 Embeddings
@@ -298,7 +296,6 @@ spring:
       embedding:
         options:
           model: text-embedding-3-small
-
 ```
 
 ### 基础使用
@@ -539,13 +536,13 @@ public ChatClient vectorMemoryChatClient(ChatModel chatModel, VectorStore vector
 
 特点对比：
 
-| 对比项 | MessageChatMemoryAdvisor | VectorStoreChatMemoryAdvisor |
-| --- | --- | --- |
-| 存储方式 | 内存（InMemoryChatMemory） | 向量数据库 |
-| 检索方式 | 按时间顺序（FIFO） | 语义相似度 |
-| 适用场景 | 短期对话（几十条） | 长期记忆（数千条） |
-| 性能 | 高 | 中等 |
-| 数据持久化 | 否 | 是 |
+| 对比项     | MessageChatMemoryAdvisor   | VectorStoreChatMemoryAdvisor |
+| ---------- | -------------------------- | ---------------------------- |
+| 存储方式   | 内存（InMemoryChatMemory） | 向量数据库                   |
+| 检索方式   | 按时间顺序（FIFO）         | 语义相似度                   |
+| 适用场景   | 短期对话（几十条）         | 长期记忆（数千条）           |
+| 性能       | 高                         | 中等                         |
+| 数据持久化 | 否                         | 是                           |
 
 使用场景：
 
@@ -848,7 +845,6 @@ spring:
               - "-y"
               - "@modelcontextprotocol/server-filesystem"
               - "/allowed/directory"
-
 ```
 
 ### 可用的 MCP 服务器
@@ -1033,13 +1029,16 @@ STDIO 方式（文件系统 MCP）：
   "mcp_id": "mcp-filesystem",
   "transport_type": "STDIO",
   "command": "npx",
-  "args_json": ["-y", "@modelcontextprotocol/server-filesystem", "/allowed/path"],
+  "args_json": [
+    "-y",
+    "@modelcontextprotocol/server-filesystem",
+    "/allowed/path"
+  ],
   "config_json": {
     "timeout": 30000,
     "retry": 3
   }
 }
-
 ```
 
 SSE 方式（远程 MCP 服务）：
@@ -1053,7 +1052,6 @@ SSE 方式（远程 MCP 服务）：
     "auth_token": "Bearer xxx"
   }
 }
-
 ```
 
 #### 4. ai_client_system_prompt - 系统提示词表
@@ -1285,7 +1283,6 @@ CREATE TABLE ai_client_config (
   "advisor_ids_json": ["advisor-memory", "advisor-rag", "advisor-statistics"],
   "config_version": 1
 }
-
 ```
 
 构建流程：

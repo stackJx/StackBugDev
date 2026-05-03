@@ -681,7 +681,7 @@ check_service() {
     if [ $? -ne 0 ]; then
         echo "$1 服务未运行，尝试重启..."
         systemctl restart $1
-      
+
         # 再次检查
         sleep 5
         systemctl is-active $1 >/dev/null 2>&1

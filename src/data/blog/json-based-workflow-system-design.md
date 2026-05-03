@@ -272,7 +272,6 @@ description: 用 JSON DSL 描述工作流的系统设计与实现：节点、边
     }
   }
 }
-
 ```
 
 ### 2.5 容错性
@@ -397,7 +396,7 @@ public interface ProcessDefinitionManager {
      * @return 部署ID
      */
     String deployProcessDefinition(String jsonDefinition);
-  
+
     /**
      * 获取流程定义
      * @param processDefinitionId 流程定义ID
@@ -405,20 +404,20 @@ public interface ProcessDefinitionManager {
      * @return 流程定义对象
      */
     ProcessDefinition getProcessDefinition(String processDefinitionId, String version);
-  
+
     /**
      * 验证流程定义
      * @param jsonDefinition JSON格式的流程定义
      * @return 验证结果
      */
     ValidationResult validateProcessDefinition(String jsonDefinition);
-  
+
     /**
      * 列出所有流程定义
      * @return 流程定义列表
      */
     List<ProcessDefinitionSummary> listProcessDefinitions();
-  
+
     /**
      * 删除流程定义
      * @param processDefinitionId 流程定义ID
@@ -446,40 +445,40 @@ public interface ProcessInstanceManager {
      * @return 流程实例对象
      */
     ProcessInstance startProcess(String processDefinitionId, String businessKey, Map<String, Object> variables);
-  
+
     /**
      * 获取流程实例
      * @param processInstanceId 流程实例ID
      * @return 流程实例对象
      */
     ProcessInstance getProcessInstance(String processInstanceId);
-  
+
     /**
      * 暂停流程实例
      * @param processInstanceId 流程实例ID
      */
     void suspendProcess(String processInstanceId);
-  
+
     /**
      * 恢复流程实例
      * @param processInstanceId 流程实例ID
      */
     void resumeProcess(String processInstanceId);
-  
+
     /**
      * 终止流程实例
      * @param processInstanceId 流程实例ID
      * @param reason 终止原因
      */
     void terminateProcess(String processInstanceId, String reason);
-  
+
     /**
      * 更新流程变量
      * @param processInstanceId 流程实例ID
      * @param variables 变量映射
      */
     void updateVariables(String processInstanceId, Map<String, Object> variables);
-  
+
     /**
      * 查询流程实例
      * @param criteria 查询条件
@@ -506,49 +505,49 @@ public interface TaskManager {
      * @return 任务ID
      */
     String createTask(String processInstanceId, TaskDefinition taskDefinition);
-  
+
     /**
      * 分配任务
      * @param taskId 任务ID
      * @param userId 用户ID
      */
     void assignTask(String taskId, String userId);
-  
+
     /**
      * 认领任务
      * @param taskId 任务ID
      * @param userId 用户ID
      */
     void claimTask(String taskId, String userId);
-  
+
     /**
      * 完成任务
      * @param taskId 任务ID
      * @param variables 任务输出变量
      */
     void completeTask(String taskId, Map<String, Object> variables);
-  
+
     /**
      * 获取任务
      * @param taskId 任务ID
      * @return 任务对象
      */
     Task getTask(String taskId);
-  
+
     /**
      * 查询任务
      * @param criteria 查询条件
      * @return 任务列表
      */
     List<Task> queryTasks(TaskQuery criteria);
-  
+
     /**
      * 设置任务到期日
      * @param taskId 任务ID
      * @param dueDate 到期日
      */
     void setTaskDueDate(String taskId, Date dueDate);
-  
+
     /**
      * 添加任务评论
      * @param taskId 任务ID
@@ -574,7 +573,7 @@ public interface ExecutionEngine {
      * @param execution 执行上下文
      */
     void executeNode(ExecutionContext execution);
-  
+
     /**
      * 评估条件表达式
      * @param expression 表达式
@@ -582,14 +581,14 @@ public interface ExecutionEngine {
      * @return 评估结果
      */
     Object evaluateExpression(String expression, Map<String, Object> variables);
-  
+
     /**
      * 处理节点转换
      * @param execution 执行上下文
      * @param sourceNodeId 源节点ID
      */
     void handleOutgoingTransitions(ExecutionContext execution, String sourceNodeId);
-  
+
     /**
      * 触发事件
      * @param execution 执行上下文
@@ -597,7 +596,7 @@ public interface ExecutionEngine {
      * @param eventData 事件数据
      */
     void fireEvent(ExecutionContext execution, String eventType, Map<String, Object> eventData);
-  
+
     /**
      * 处理异常
      * @param execution 执行上下文
@@ -625,7 +624,7 @@ public interface ServiceIntegrator {
      * @return 服务调用结果
      */
     Object invokeService(String serviceType, String operation, Map<String, Object> parameters);
-  
+
     /**
      * 异步调用服务
      * @param serviceType 服务类型
@@ -634,20 +633,20 @@ public interface ServiceIntegrator {
      * @param callback 回调处理器
      */
     void invokeServiceAsync(String serviceType, String operation, Map<String, Object> parameters, ServiceCallback callback);
-  
+
     /**
      * 注册服务连接器
      * @param serviceType 服务类型
      * @param connector 连接器实现
      */
     void registerServiceConnector(String serviceType, ServiceConnector connector);
-  
+
     /**
      * 获取已注册的服务类型
      * @return 服务类型列表
      */
     List<String> getRegisteredServiceTypes();
-  
+
     /**
      * 测试服务连接
      * @param serviceType 服务类型
@@ -674,7 +673,7 @@ public interface HistoryService {
      * @param details 事件详情
      */
     void recordProcessInstanceEvent(ProcessInstance processInstance, String eventType, Map<String, Object> details);
-  
+
     /**
      * 记录任务事件
      * @param task 任务
@@ -683,7 +682,7 @@ public interface HistoryService {
      * @param details 事件详情
      */
     void recordTaskEvent(Task task, String eventType, String userId, Map<String, Object> details);
-  
+
     /**
      * 记录变量变更
      * @param processInstanceId 流程实例ID
@@ -692,28 +691,28 @@ public interface HistoryService {
      * @param newValue 新值
      */
     void recordVariableChange(String processInstanceId, String variableName, Object oldValue, Object newValue);
-  
+
     /**
      * 查询流程实例历史
      * @param criteria 查询条件
      * @return 流程实例历史列表
      */
     List<ProcessInstanceHistory> queryProcessHistory(ProcessHistoryQuery criteria);
-  
+
     /**
      * 查询任务历史
      * @param criteria 查询条件
      * @return 任务历史列表
      */
     List<TaskHistory> queryTaskHistory(TaskHistoryQuery criteria);
-  
+
     /**
      * 生成流程统计报告
      * @param reportDefinition 报告定义
      * @return 统计报告
      */
     ProcessStatisticsReport generateStatisticsReport(ReportDefinition reportDefinition);
-  
+
     /**
      * 清理历史数据
      * @param criteria 清理条件
@@ -740,28 +739,28 @@ public interface IdentityService {
      * @return 验证结果
      */
     boolean authenticateUser(String userId, Object credentials);
-  
+
     /**
      * 获取用户信息
      * @param userId 用户ID
      * @return 用户信息
      */
     User getUser(String userId);
-  
+
     /**
      * 获取用户所属组
      * @param userId 用户ID
      * @return 组列表
      */
     List<Group> getUserGroups(String userId);
-  
+
     /**
      * 获取组成员
      * @param groupId 组ID
      * @return 用户列表
      */
     List<User> getGroupMembers(String groupId);
-  
+
     /**
      * 检查权限
      * @param userId 用户ID
@@ -770,7 +769,7 @@ public interface IdentityService {
      * @return 是否有权限
      */
     boolean checkPermission(String userId, String permission, String resourceId);
-  
+
     /**
      * 分配任务候选人
      * @param taskDefinition 任务定义
@@ -853,19 +852,19 @@ end
   "name": "贷款审批流程",
   "version": "1.0",
   "description": "处理贷款申请的审批流程",
-  
+
   "variables": [
     // 流程变量定义
   ],
-  
+
   "nodes": [
     // 节点定义
   ],
-  
+
   "transitions": [
     // 转换定义
   ],
-  
+
   "settings": {
     // 流程设置
   }
@@ -1213,9 +1212,9 @@ public class JsonWorkflowEngine implements WorkflowEngine {
     private ServiceIntegrator serviceIntegrator;
     private HistoryService historyService;
     private IdentityService identityService;
-  
+
     // 构造函数注入依赖...
-  
+
     /**
      * 部署工作流定义
      */
@@ -1224,14 +1223,14 @@ public class JsonWorkflowEngine implements WorkflowEngine {
         // 验证JSON定义
         ValidationResult validationResult = processDefinitionManager.validateProcessDefinition(jsonDefinition);
         if (!validationResult.isValid()) {
-            throw new WorkflowDefinitionException("Invalid workflow definition: " + 
+            throw new WorkflowDefinitionException("Invalid workflow definition: " +
                                                  String.join(", ", validationResult.getErrors()));
         }
-  
+
         // 部署流程定义
         return processDefinitionManager.deployProcessDefinition(jsonDefinition);
     }
-  
+
     /**
      * 启动工作流实例
      */
@@ -1242,33 +1241,33 @@ public class JsonWorkflowEngine implements WorkflowEngine {
         if (processDefinition == null) {
             throw new WorkflowNotFoundException("Process definition not found: " + processDefinitionId);
         }
-  
+
         // 验证必填变量
         validateRequiredVariables(processDefinition, variables);
-  
+
         // 创建流程实例
         ProcessInstance processInstance = processInstanceManager.startProcess(
             processDefinitionId, businessKey, variables);
-  
+
         // 记录历史
         historyService.recordProcessInstanceEvent(
             processInstance, "STARTED", Collections.singletonMap("startedBy", getCurrentUserId()));
-  
+
         // 查找开始节点
         NodeDefinition startNode = findStartNode(processDefinition);
         if (startNode == null) {
             throw new WorkflowDefinitionException("No start node found in process: " + processDefinitionId);
         }
-  
+
         // 创建执行上下文
         ExecutionContext executionContext = createExecutionContext(processInstance, processDefinition);
-  
+
         // 执行开始节点
         executionEngine.executeNode(executionContext);
-  
+
         return processInstance;
     }
-  
+
     /**
      * 完成任务
      */
@@ -1279,42 +1278,42 @@ public class JsonWorkflowEngine implements WorkflowEngine {
         if (task == null) {
             throw new TaskNotFoundException("Task not found: " + taskId);
         }
-  
+
         // 检查任务状态
         if (task.getStatus() != TaskStatus.ASSIGNED && task.getStatus() != TaskStatus.STARTED) {
             throw new InvalidTaskStateException("Task cannot be completed in state: " + task.getStatus());
         }
-  
+
         // 检查权限
         if (!identityService.checkPermission(getCurrentUserId(), "complete", taskId)) {
             throw new UnauthorizedException("User not authorized to complete this task");
         }
-  
+
         // 完成任务
         taskManager.completeTask(taskId, variables);
-  
+
         // 记录历史
         historyService.recordTaskEvent(
             task, "COMPLETED", getCurrentUserId(), Collections.singletonMap("variables", variables));
-  
+
         // 获取流程实例和定义
         ProcessInstance processInstance = processInstanceManager.getProcessInstance(task.getProcessInstanceId());
         ProcessDefinition processDefinition = processDefinitionManager.getProcessDefinition(
             processInstance.getProcessDefinitionId(), processInstance.getProcessDefinitionVersion());
-  
+
         // 更新流程变量
         if (variables != null && !variables.isEmpty()) {
             processInstanceManager.updateVariables(processInstance.getId(), variables);
         }
-  
+
         // 创建执行上下文
         ExecutionContext executionContext = createExecutionContext(processInstance, processDefinition);
-  
+
         // 处理后续流转
         NodeDefinition currentNode = findNodeById(processDefinition, task.getNodeId());
         executionEngine.handleOutgoingTransitions(executionContext, currentNode.getId());
     }
-  
+
     /**
      * 查询任务
      */
@@ -1325,10 +1324,10 @@ public class JsonWorkflowEngine implements WorkflowEngine {
         if (!isAdmin(currentUserId)) {
             query.setAssigneeOrCandidate(currentUserId);
         }
-  
+
         return taskManager.queryTasks(query);
     }
-  
+
     /**
      * 获取流程实例
      */
@@ -1338,17 +1337,17 @@ public class JsonWorkflowEngine implements WorkflowEngine {
         if (instance == null) {
             throw new WorkflowNotFoundException("Process instance not found: " + processInstanceId);
         }
-  
+
         // 检查权限
         if (!identityService.checkPermission(getCurrentUserId(), "view", processInstanceId)) {
             throw new UnauthorizedException("User not authorized to view this process instance");
         }
-  
+
         return instance;
     }
-  
+
     // 其他工作流操作方法...
-  
+
     /**
      * 创建执行上下文
      */
@@ -1363,7 +1362,7 @@ public class JsonWorkflowEngine implements WorkflowEngine {
         context.setIdentityService(identityService);
         return context;
     }
-  
+
     /**
      * 查找开始节点
      */
@@ -1375,7 +1374,7 @@ public class JsonWorkflowEngine implements WorkflowEngine {
         }
         return null;
     }
-  
+
     /**
      * 根据ID查找节点
      */
@@ -1387,34 +1386,34 @@ public class JsonWorkflowEngine implements WorkflowEngine {
         }
         return null;
     }
-  
+
     /**
      * 验证必填变量
      */
     private void validateRequiredVariables(ProcessDefinition processDefinition, Map<String, Object> variables) {
         List<String> missingVariables = new ArrayList<>();
-  
+
         for (VariableDefinition varDef : processDefinition.getVariables()) {
-            if (Boolean.TRUE.equals(varDef.getRequired()) && 
-                !variables.containsKey(varDef.getName()) && 
+            if (Boolean.TRUE.equals(varDef.getRequired()) &&
+                !variables.containsKey(varDef.getName()) &&
                 varDef.getDefaultValue() == null) {
                 missingVariables.add(varDef.getName());
             }
         }
-  
+
         if (!missingVariables.isEmpty()) {
-            throw new WorkflowValidationException("Missing required variables: " + 
+            throw new WorkflowValidationException("Missing required variables: " +
                                                  String.join(", ", missingVariables));
         }
     }
-  
+
     /**
      * 获取当前用户ID
      */
     private String getCurrentUserId() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
-  
+
     /**
      * 检查是否管理员
      */
@@ -1435,7 +1434,7 @@ public class DefaultExecutionEngine implements ExecutionEngine {
     private Map<String, NodeHandler> nodeHandlers;
     private ExpressionEvaluator expressionEvaluator;
     private EventManager eventManager;
-  
+
     /**
      * 构造函数
      */
@@ -1443,18 +1442,18 @@ public class DefaultExecutionEngine implements ExecutionEngine {
         this.nodeHandlers = new HashMap<>();
         this.expressionEvaluator = new SpelExpressionEvaluator();
         this.eventManager = new DefaultEventManager();
-  
+
         // 注册默认节点处理器
         registerDefaultNodeHandlers();
     }
-  
+
     /**
      * 注册节点处理器
      */
     public void registerNodeHandler(String nodeType, NodeHandler handler) {
         nodeHandlers.put(nodeType, handler);
     }
-  
+
     /**
      * 注册默认节点处理器
      */
@@ -1470,7 +1469,7 @@ public class DefaultExecutionEngine implements ExecutionEngine {
         registerNodeHandler("timerEvent", new TimerEventHandler());
         registerNodeHandler("subProcess", new SubProcessHandler());
     }
-  
+
     /**
      * 执行节点
      */
@@ -1479,7 +1478,7 @@ public class DefaultExecutionEngine implements ExecutionEngine {
         ProcessInstance processInstance = execution.getProcessInstance();
         ProcessDefinition processDefinition = execution.getProcessDefinition();
         String currentNodeId = processInstance.getCurrentNodeId();
-  
+
         // 如果没有当前节点ID，使用开始节点
         if (currentNodeId == null) {
             NodeDefinition startNode = findStartNode(processDefinition);
@@ -1489,29 +1488,29 @@ public class DefaultExecutionEngine implements ExecutionEngine {
             currentNodeId = startNode.getId();
             processInstance.setCurrentNodeId(currentNodeId);
         }
-  
+
         // 查找当前节点定义
         NodeDefinition currentNode = findNodeById(processDefinition, currentNodeId);
         if (currentNode == null) {
             throw new WorkflowExecutionException("Node not found: " + currentNodeId);
         }
-  
+
         try {
             // 触发节点进入事件
             fireEvent(execution, "node.enter", Map.of("nodeId", currentNodeId, "nodeType", currentNode.getType()));
-      
+
             // 获取节点处理器
             NodeHandler handler = nodeHandlers.get(currentNode.getType());
             if (handler == null) {
                 throw new WorkflowExecutionException("No handler found for node type: " + currentNode.getType());
             }
-      
+
             // 执行节点
             handler.execute(execution, currentNode);
-      
+
             // 触发节点离开事件
             fireEvent(execution, "node.leave", Map.of("nodeId", currentNodeId, "nodeType", currentNode.getType()));
-      
+
             // 如果是自动节点，处理后续流转
             if (isAutoNode(currentNode.getType())) {
                 handleOutgoingTransitions(execution, currentNodeId);
@@ -1521,7 +1520,7 @@ public class DefaultExecutionEngine implements ExecutionEngine {
             handleException(execution, e);
         }
     }
-  
+
     /**
      * 处理节点的后续转换
      */
@@ -1529,10 +1528,10 @@ public class DefaultExecutionEngine implements ExecutionEngine {
     public void handleOutgoingTransitions(ExecutionContext execution, String sourceNodeId) {
         ProcessDefinition processDefinition = execution.getProcessDefinition();
         NodeDefinition sourceNode = findNodeById(processDefinition, sourceNodeId);
-  
+
         // 查找所有出口转换
         List<TransitionDefinition> outgoingTransitions = findOutgoingTransitions(processDefinition, sourceNodeId);
-  
+
         // 如果没有出口转换，结束流程
         if (outgoingTransitions.isEmpty()) {
             if (!sourceNode.getType().equals("endEvent")) {
@@ -1540,21 +1539,21 @@ public class DefaultExecutionEngine implements ExecutionEngine {
             }
             return;
         }
-  
+
         // 根据节点类型处理转换
         switch (sourceNode.getType()) {
             case "exclusiveGateway":
                 handleExclusiveGatewayTransitions(execution, sourceNode, outgoingTransitions);
                 break;
-          
+
             case "parallelGateway":
                 handleParallelGatewayTransitions(execution, sourceNode, outgoingTransitions);
                 break;
-          
+
             case "inclusiveGateway":
                 handleInclusiveGatewayTransitions(execution, sourceNode, outgoingTransitions);
                 break;
-          
+
             default:
                 // 普通节点：执行第一个满足条件的转换
                 for (TransitionDefinition transition : outgoingTransitions) {
@@ -1563,25 +1562,25 @@ public class DefaultExecutionEngine implements ExecutionEngine {
                         return;
                     }
                 }
-          
+
                 // 如果没有满足条件的转换，记录警告
                 fireEvent(execution, "process.noValidTransition", Map.of("nodeId", sourceNodeId));
                 break;
         }
     }
-  
+
     /**
      * 处理排他网关转换
      */
     private void handleExclusiveGatewayTransitions(
-            ExecutionContext execution, 
-            NodeDefinition gateway, 
+            ExecutionContext execution,
+            NodeDefinition gateway,
             List<TransitionDefinition> outgoingTransitions) {
-  
+
         // 获取默认流
         String defaultFlow = (String) gateway.getProperties().getOrDefault("defaultFlow", "");
         TransitionDefinition defaultTransition = null;
-  
+
         // 查找满足条件的转换
         for (TransitionDefinition transition : outgoingTransitions) {
             // 保存默认流转
@@ -1589,134 +1588,134 @@ public class DefaultExecutionEngine implements ExecutionEngine {
                 defaultTransition = transition;
                 continue;
             }
-      
+
             // 评估条件
             if (evaluateCondition(execution, transition)) {
                 executeTransition(execution, transition);
                 return;
             }
         }
-  
+
         // 如果没有条件满足且有默认流转，则执行默认流转
         if (defaultTransition != null) {
             executeTransition(execution, defaultTransition);
             return;
         }
-  
+
         // 如果没有可执行的转换，抛出异常
         throw new WorkflowExecutionException("No valid outgoing transition found for exclusive gateway: " + gateway.getId());
     }
-  
+
     /**
      * 处理并行网关转换
      */
     private void handleParallelGatewayTransitions(
-            ExecutionContext execution, 
-            NodeDefinition gateway, 
+            ExecutionContext execution,
+            NodeDefinition gateway,
             List<TransitionDefinition> outgoingTransitions) {
-  
+
         // 创建并行执行分支
         List<ExecutionContext> parallelExecutions = new ArrayList<>();
-  
+
         // 第一个分支使用当前执行上下文
         parallelExecutions.add(execution);
-  
+
         // 为其他分支创建新的执行上下文
         for (int i = 1; i < outgoingTransitions.size(); i++) {
             ExecutionContext parallelExecution = execution.createParallelExecution();
             parallelExecutions.add(parallelExecution);
         }
-  
+
         // 执行每个分支
         for (int i = 0; i < outgoingTransitions.size(); i++) {
             TransitionDefinition transition = outgoingTransitions.get(i);
             ExecutionContext parallelExecution = parallelExecutions.get(i);
-      
+
             // 执行转换
             executeTransition(parallelExecution, transition);
         }
     }
-  
+
     /**
      * 处理包容网关转换
      */
     private void handleInclusiveGatewayTransitions(
-            ExecutionContext execution, 
-            NodeDefinition gateway, 
+            ExecutionContext execution,
+            NodeDefinition gateway,
             List<TransitionDefinition> outgoingTransitions) {
-  
+
         // 获取默认流
         String defaultFlow = (String) gateway.getProperties().getOrDefault("defaultFlow", "");
         TransitionDefinition defaultTransition = null;
-  
+
         // 查找所有满足条件的转换
         List<TransitionDefinition> validTransitions = new ArrayList<>();
-  
+
         for (TransitionDefinition transition : outgoingTransitions) {
             // 保存默认流转
             if (transition.getId().equals(defaultFlow)) {
                 defaultTransition = transition;
                 continue;
             }
-      
+
             // 评估条件
             if (evaluateCondition(execution, transition)) {
                 validTransitions.add(transition);
             }
         }
-  
+
         // 如果没有满足条件的转换且有默认流转，则使用默认流转
         if (validTransitions.isEmpty() && defaultTransition != null) {
             validTransitions.add(defaultTransition);
         }
-  
+
         // 如果没有可执行的转换，抛出异常
         if (validTransitions.isEmpty()) {
             throw new WorkflowExecutionException("No valid outgoing transition found for inclusive gateway: " + gateway.getId());
         }
-  
+
         // 创建并行执行分支
         List<ExecutionContext> parallelExecutions = new ArrayList<>();
-  
+
         // 第一个分支使用当前执行上下文
         parallelExecutions.add(execution);
-  
+
         // 为其他分支创建新的执行上下文
         for (int i = 1; i < validTransitions.size(); i++) {
             ExecutionContext parallelExecution = execution.createParallelExecution();
             parallelExecutions.add(parallelExecution);
         }
-  
+
         // 执行每个分支
         for (int i = 0; i < validTransitions.size(); i++) {
             TransitionDefinition transition = validTransitions.get(i);
             ExecutionContext parallelExecution = parallelExecutions.get(i);
-      
+
             // 执行转换
             executeTransition(parallelExecution, transition);
         }
     }
-  
+
     /**
      * 执行转换
      */
     private void executeTransition(ExecutionContext execution, TransitionDefinition transition) {
         ProcessInstance processInstance = execution.getProcessInstance();
-  
+
         // 触发转换事件
         fireEvent(execution, "transition.take", Map.of(
             "transitionId", transition.getId(),
             "sourceNodeId", transition.getSourceNodeId(),
             "targetNodeId", transition.getTargetNodeId()
         ));
-  
+
         // 更新当前节点
         processInstance.setCurrentNodeId(transition.getTargetNodeId());
-  
+
         // 执行目标节点
         executeNode(execution);
     }
-  
+
     /**
      * 评估条件表达式
      */
@@ -1725,28 +1724,28 @@ public class DefaultExecutionEngine implements ExecutionEngine {
         if (expression == null || expression.trim().isEmpty()) {
             return true; // 空条件视为总是满足
         }
-  
+
         try {
             return expressionEvaluator.evaluate(expression, variables);
         } catch (Exception e) {
             throw new ExpressionEvaluationException("Error evaluating expression: " + expression, e);
         }
     }
-  
+
     /**
      * 评估转换条件
      */
     private boolean evaluateCondition(ExecutionContext execution, TransitionDefinition transition) {
         String condition = transition.getCondition();
-  
+
         // 如果没有条件，视为总是满足
         if (condition == null || condition.trim().isEmpty()) {
             return true;
         }
-  
+
         // 评估条件
         Object result = evaluateExpression(condition, execution.getVariables());
-  
+
         // 确保结果是布尔值
         if (result instanceof Boolean) {
             return (Boolean) result;
@@ -1754,7 +1753,7 @@ public class DefaultExecutionEngine implements ExecutionEngine {
             throw new ExpressionEvaluationException("Condition did not evaluate to a boolean: " + condition);
         }
     }
-  
+
     /**
      * 触发事件
      */
@@ -1764,15 +1763,15 @@ public class DefaultExecutionEngine implements ExecutionEngine {
         fullEventData.put("processInstanceId", execution.getProcessInstance().getId());
         fullEventData.put("processDefinitionId", execution.getProcessDefinition().getId());
         fullEventData.put("timestamp", new Date());
-  
+
         WorkflowEvent event = new WorkflowEvent(eventType, fullEventData);
         eventManager.fireEvent(event);
-  
+
         // 记录事件到历史服务
         execution.getHistoryService().recordProcessInstanceEvent(
             execution.getProcessInstance(), eventType, fullEventData);
     }
-  
+
     /**
      * 处理异常
      */
@@ -1780,22 +1779,22 @@ public class DefaultExecutionEngine implements ExecutionEngine {
     public void handleException(ExecutionContext execution, Exception exception) {
         ProcessInstance processInstance = execution.getProcessInstance();
         String currentNodeId = processInstance.getCurrentNodeId();
-  
+
         // 记录异常
         Map<String, Object> exceptionData = new HashMap<>();
         exceptionData.put("nodeId", currentNodeId);
         exceptionData.put("exceptionClass", exception.getClass().getName());
         exceptionData.put("exceptionMessage", exception.getMessage());
         exceptionData.put("stackTrace", getStackTraceAsString(exception));
-  
+
         fireEvent(execution, "process.error", exceptionData);
-  
+
         // 查找节点的错误处理配置
         NodeDefinition currentNode = findNodeById(execution.getProcessDefinition(), currentNodeId);
         if (currentNode != null) {
             @SuppressWarnings("unchecked")
             Map<String, Object> errorHandling = (Map<String, Object>) currentNode.getProperties().get("errorHandling");
-      
+
             if (errorHandling != null) {
                 // 处理重试策略
                 @SuppressWarnings("unchecked")
@@ -1804,7 +1803,7 @@ public class DefaultExecutionEngine implements ExecutionEngine {
                     handleRetry(execution, currentNode, retryStrategy, exception);
                     return;
                 }
-          
+
                 // 处理错误转向
                 String errorNodeId = (String) errorHandling.get("errorNodeId");
                 if (errorNodeId != null) {
@@ -1815,15 +1814,15 @@ public class DefaultExecutionEngine implements ExecutionEngine {
                 }
             }
         }
-  
+
         // 如果没有特定的错误处理，将流程标记为失败
         processInstance.setStatus(ProcessStatus.FAILED);
         processInstance.setEndTime(new Date());
         processInstance.setErrorMessage(exception.getMessage());
-  
+
         // 触发流程失败事件
         fireEvent(execution, "process.failed", exceptionData);
-  
+
         // 重新抛出异常
         if (exception instanceof WorkflowException) {
             throw (WorkflowException) exception;
@@ -1831,38 +1830,38 @@ public class DefaultExecutionEngine implements ExecutionEngine {
             throw new WorkflowExecutionException("Error executing workflow", exception);
         }
     }
-  
+
     /**
      * 处理重试逻辑
      */
     private void handleRetry(
-            ExecutionContext execution, 
-            NodeDefinition node, 
-            Map<String, Object> retryStrategy, 
+            ExecutionContext execution,
+            NodeDefinition node,
+            Map<String, Object> retryStrategy,
             Exception exception) {
-  
+
         ProcessInstance processInstance = execution.getProcessInstance();
-  
+
         // 获取重试配置
         int maxRetries = ((Number) retryStrategy.getOrDefault("maxRetries", 0)).intValue();
         String retryIntervalStr = (String) retryStrategy.getOrDefault("retryInterval", "PT10S");
         boolean exponentialBackoff = Boolean.TRUE.equals(retryStrategy.get("exponentialBackoff"));
-  
+
         // 获取当前重试次数
         String retryCountKey = "_retryCount_" + node.getId();
         Integer currentRetries = (Integer) execution.getVariables().getOrDefault(retryCountKey, 0);
-  
+
         if (currentRetries < maxRetries) {
             // 增加重试计数
             currentRetries++;
             execution.getVariables().put(retryCountKey, currentRetries);
-      
+
             // 计算重试延迟
             Duration retryInterval = Duration.parse(retryIntervalStr);
             if (exponentialBackoff && currentRetries > 1) {
                 retryInterval = retryInterval.multipliedBy((long) Math.pow(2, currentRetries - 1));
             }
-      
+
             // 记录重试事件
             Map<String, Object> retryData = new HashMap<>();
             retryData.put("nodeId", node.getId());
@@ -1870,9 +1869,9 @@ public class DefaultExecutionEngine implements ExecutionEngine {
             retryData.put("maxRetries", maxRetries);
             retryData.put("retryInterval", retryInterval.toString());
             retryData.put("nextRetryTime", new Date(System.currentTimeMillis() + retryInterval.toMillis()));
-      
+
             fireEvent(execution, "node.retry", retryData);
-      
+
             // 安排重试
             // 注意：实际实现可能需要使用定时任务或消息队列来处理延迟执行
             // 这里简化为直接重试
@@ -1889,9 +1888,9 @@ public class DefaultExecutionEngine implements ExecutionEngine {
             failureData.put("nodeId", node.getId());
             failureData.put("retriesExhausted", true);
             failureData.put("retryCount", currentRetries);
-      
+
             fireEvent(execution, "node.retryFailed", failureData);
-      
+
             // 检查是否有失败后转向节点
             String fallbackNodeId = (String) retryStrategy.get("fallbackNode");
             if (fallbackNodeId != null) {
@@ -1904,14 +1903,14 @@ public class DefaultExecutionEngine implements ExecutionEngine {
             }
         }
     }
-  
+
     /**
      * 判断是否自动节点
      */
     private boolean isAutoNode(String nodeType) {
         return !nodeType.equals("userTask") && !nodeType.equals("manualTask") && !nodeType.equals("receiveTask");
     }
-  
+
     /**
      * 查找开始节点
      */
@@ -1923,7 +1922,7 @@ public class DefaultExecutionEngine implements ExecutionEngine {
         }
         return null;
     }
-  
+
     /**
      * 根据ID查找节点
      */
@@ -1935,22 +1934,22 @@ public class DefaultExecutionEngine implements ExecutionEngine {
         }
         return null;
     }
-  
+
     /**
      * 查找出口转换
      */
     private List<TransitionDefinition> findOutgoingTransitions(ProcessDefinition processDefinition, String nodeId) {
         List<TransitionDefinition> outgoing = new ArrayList<>();
-  
+
         for (TransitionDefinition transition : processDefinition.getTransitions()) {
             if (transition.getSourceNodeId().equals(nodeId)) {
                 outgoing.add(transition);
             }
         }
-  
+
         return outgoing;
     }
-  
+
     /**
      * 获取堆栈跟踪字符串
      */
@@ -1975,30 +1974,30 @@ public class UserTaskHandler implements NodeHandler {
     public void execute(ExecutionContext execution, NodeDefinition node) {
         TaskManager taskManager = execution.getTaskManager();
         IdentityService identityService = execution.getIdentityService();
-  
+
         // 创建任务定义
         TaskDefinition taskDefinition = new TaskDefinition();
         taskDefinition.setNodeId(node.getId());
         taskDefinition.setName(node.getName());
         taskDefinition.setDescription((String) node.getProperties().getOrDefault("description", ""));
-  
+
         // 处理表单配置
         String formKey = (String) node.getProperties().get("formKey");
         if (formKey != null) {
             formKey = resolveExpression(execution, formKey);
             taskDefinition.setFormKey(formKey);
         }
-  
+
         // 处理表单属性
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> formProperties = (List<Map<String, Object>>) node.getProperties().get("formProperties");
         if (formProperties != null) {
             taskDefinition.setFormProperties(formProperties);
         }
-  
+
         // 处理任务分配
         assignTask(execution, node, taskDefinition);
-  
+
         // 处理任务期限
         String dueDateExpr = (String) node.getProperties().get("dueDate");
         if (dueDateExpr != null) {
@@ -2015,16 +2014,16 @@ public class UserTaskHandler implements NodeHandler {
                 }
             }
         }
-  
+
         // 处理任务优先级
         String priority = (String) node.getProperties().get("priority");
         if (priority != null) {
             taskDefinition.setPriority(priority);
         }
-  
+
         // 创建任务
         String taskId = taskManager.createTask(execution.getProcessInstance().getId(), taskDefinition);
-  
+
         // 记录任务创建事件
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("taskId", taskId);
@@ -2032,18 +2031,18 @@ public class UserTaskHandler implements NodeHandler {
         eventData.put("assignee", taskDefinition.getAssignee());
         eventData.put("candidateUsers", taskDefinition.getCandidateUsers());
         eventData.put("candidateGroups", taskDefinition.getCandidateGroups());
-  
+
         execution.getExecutionEngine().fireEvent(execution, "task.created", eventData);
-  
+
         // 发送任务通知(如果启用)
         Boolean enableNotifications = (Boolean) execution.getProcessDefinition().getSettings()
             .getOrDefault("enableNotifications", Boolean.TRUE);
-  
+
         if (Boolean.TRUE.equals(enableNotifications)) {
             sendTaskNotifications(execution, taskDefinition, taskId);
         }
     }
-  
+
     /**
      * 分配任务
      */
@@ -2057,7 +2056,7 @@ public class UserTaskHandler implements NodeHandler {
                 return;
             }
         }
-  
+
         // 处理候选用户
         Object candidateUsersObj = node.getProperties().get("candidateUsers");
         if (candidateUsersObj != null) {
@@ -2066,7 +2065,7 @@ public class UserTaskHandler implements NodeHandler {
                 taskDefinition.setCandidateUsers(candidateUsers);
             }
         }
-  
+
         // 处理候选组
         Object candidateGroupsObj = node.getProperties().get("candidateGroups");
         if (candidateGroupsObj != null) {
@@ -2075,25 +2074,25 @@ public class UserTaskHandler implements NodeHandler {
                 taskDefinition.setCandidateGroups(candidateGroups);
             }
         }
-  
+
         // 如果没有指定任何分配信息，使用流程发起人
-        if (taskDefinition.getAssignee() == null && 
+        if (taskDefinition.getAssignee() == null &&
             (taskDefinition.getCandidateUsers() == null || taskDefinition.getCandidateUsers().isEmpty()) &&
             (taskDefinition.getCandidateGroups() == null || taskDefinition.getCandidateGroups().isEmpty())) {
-      
+
             String initiator = (String) execution.getVariables().get("initiator");
             if (initiator != null && !initiator.isEmpty()) {
                 taskDefinition.setAssignee(initiator);
             }
         }
     }
-  
+
     /**
      * 解析候选人/组
      */
     private List<String> resolveCandidates(ExecutionContext execution, Object candidatesObj) {
         List<String> candidates = new ArrayList<>();
-  
+
         if (candidatesObj instanceof String) {
             String candidatesExpr = (String) candidatesObj;
             String resolved = resolveExpression(execution, candidatesExpr);
@@ -2112,10 +2111,10 @@ public class UserTaskHandler implements NodeHandler {
                 }
             }
         }
-  
+
         return candidates;
     }
-  
+
     /**
      * 解析表达式
      */
@@ -2123,21 +2122,21 @@ public class UserTaskHandler implements NodeHandler {
         if (expression == null) {
             return null;
         }
-  
+
         if (expression.contains("${")) {
             Object result = execution.getExpressionEvaluator().evaluate(expression, execution.getVariables());
             return result != null ? result.toString() : null;
         }
-  
+
         return expression;
     }
-  
+
     /**
      * 发送任务通知
      */
     private void sendTaskNotifications(ExecutionContext execution, TaskDefinition taskDefinition, String taskId) {
         ServiceIntegrator serviceIntegrator = execution.getServiceIntegrator();
-  
+
         // 准备通知数据
         Map<String, Object> notificationData = new HashMap<>();
         notificationData.put("taskId", taskId);
@@ -2145,17 +2144,17 @@ public class UserTaskHandler implements NodeHandler {
         notificationData.put("processInstanceId", execution.getProcessInstance().getId());
         notificationData.put("processDefinitionId", execution.getProcessDefinition().getId());
         notificationData.put("processName", execution.getProcessDefinition().getName());
-  
+
         // 获取通知模板
         String notificationTemplate = (String) execution.getProcessDefinition().getSettings()
             .getOrDefault("taskNotificationTemplate", "default-task-notification");
-  
+
         // 发送通知给受理人
         if (taskDefinition.getAssignee() != null) {
             try {
                 serviceIntegrator.invokeService(
-                    "notificationService", 
-                    "sendNotification", 
+                    "notificationService",
+                    "sendNotification",
                     Map.of(
                         "recipient", taskDefinition.getAssignee(),
                         "template", notificationTemplate,
@@ -2165,20 +2164,20 @@ public class UserTaskHandler implements NodeHandler {
             } catch (Exception e) {
                 // 记录通知错误但不中断流程
                 execution.getExecutionEngine().fireEvent(
-                    execution, 
-                    "notification.error", 
+                    execution,
+                    "notification.error",
                     Map.of("error", e.getMessage(), "recipient", taskDefinition.getAssignee())
                 );
             }
         }
-  
+
         // 发送通知给候选用户
         if (taskDefinition.getCandidateUsers() != null) {
             for (String user : taskDefinition.getCandidateUsers()) {
                 try {
                     serviceIntegrator.invokeService(
-                        "notificationService", 
-                        "sendNotification", 
+                        "notificationService",
+                        "sendNotification",
                         Map.of(
                             "recipient", user,
                             "template", notificationTemplate,
@@ -2188,8 +2187,8 @@ public class UserTaskHandler implements NodeHandler {
                 } catch (Exception e) {
                     // 记录通知错误但不中断流程
                     execution.getExecutionEngine().fireEvent(
-                        execution, 
-                        "notification.error", 
+                        execution,
+                        "notification.error",
                         Map.of("error", e.getMessage(), "recipient", user)
                     );
                 }
@@ -2210,57 +2209,57 @@ public class ServiceTaskHandler implements NodeHandler {
     @Override
     public void execute(ExecutionContext execution, NodeDefinition node) {
         ServiceIntegrator serviceIntegrator = execution.getServiceIntegrator();
-  
+
         // 获取服务任务配置
         String serviceType = (String) node.getProperties().get("serviceType");
         String operation = (String) node.getProperties().get("operation");
-  
+
         if (serviceType == null || operation == null) {
             throw new WorkflowExecutionException("Service task configuration is incomplete");
         }
-  
+
         // 解析表达式
         serviceType = resolveExpression(execution, serviceType);
         operation = resolveExpression(execution, operation);
-  
+
         try {
             // 准备参数
             Map<String, Object> parameters = prepareParameters(execution, node);
-      
+
             // 记录服务调用开始事件
             execution.getExecutionEngine().fireEvent(
-                execution, 
-                "service.invoke.start", 
+                execution,
+                "service.invoke.start",
                 Map.of(
                     "serviceType", serviceType,
                     "operation", operation,
                     "nodeId", node.getId()
                 )
             );
-      
+
             // 调用服务
             Object result = serviceIntegrator.invokeService(serviceType, operation, parameters);
-      
+
             // 记录服务调用成功事件
             execution.getExecutionEngine().fireEvent(
-                execution, 
-                "service.invoke.success", 
+                execution,
+                "service.invoke.success",
                 Map.of(
                     "serviceType", serviceType,
                     "operation", operation,
                     "nodeId", node.getId()
                 )
             );
-      
+
             // 处理结果
             if (result != null) {
                 String resultVariable = (String) node.getProperties().get("resultVariable");
                 if (resultVariable != null && !resultVariable.isEmpty()) {
                     execution.getVariables().put(resultVariable, result);
-              
+
                     // 更新流程实例变量
                     execution.getProcessInstanceManager().updateVariables(
-                        execution.getProcessInstance().getId(), 
+                        execution.getProcessInstance().getId(),
                         Map.of(resultVariable, result)
                     );
                 }
@@ -2268,8 +2267,8 @@ public class ServiceTaskHandler implements NodeHandler {
         } catch (Exception e) {
             // 记录服务调用失败事件
             execution.getExecutionEngine().fireEvent(
-                execution, 
-                "service.invoke.error", 
+                execution,
+                "service.invoke.error",
                 Map.of(
                     "serviceType", serviceType,
                     "operation", operation,
@@ -2277,30 +2276,30 @@ public class ServiceTaskHandler implements NodeHandler {
                     "error", e.getMessage()
                 )
             );
-      
+
             // 将异常传递给执行引擎处理
             throw new ServiceInvocationException("Error invoking service: " + serviceType + "." + operation, e);
         }
     }
-  
+
     /**
      * 准备服务调用参数
      */
     private Map<String, Object> prepareParameters(ExecutionContext execution, NodeDefinition node) {
         Map<String, Object> parameters = new HashMap<>();
-  
+
         // 获取参数映射配置
         @SuppressWarnings("unchecked")
         Map<String, Object> parameterMappings = (Map<String, Object>) node.getProperties().get("parameterMappings");
-  
+
         if (parameterMappings != null) {
             for (Map.Entry<String, Object> entry : parameterMappings.entrySet()) {
                 String paramName = entry.getKey();
                 Object paramValueExpr = entry.getValue();
-          
+
                 if (paramValueExpr instanceof String) {
                     String valueExpr = (String) paramValueExpr;
-              
+
                     // 处理字面量字符串(用单引号括起来的字符串)
                     if (valueExpr.startsWith("'") && valueExpr.endsWith("'") && valueExpr.length() > 2) {
                         parameters.put(paramName, valueExpr.substring(1, valueExpr.length() - 1));
@@ -2316,18 +2315,18 @@ public class ServiceTaskHandler implements NodeHandler {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> nestedMap = (Map<String, Object>) paramValueExpr;
                     Map<String, Object> resolvedMap = new HashMap<>();
-              
+
                     for (Map.Entry<String, Object> nestedEntry : nestedMap.entrySet()) {
                         String nestedKey = nestedEntry.getKey();
                         Object nestedValue = nestedEntry.getValue();
-                  
+
                         if (nestedValue instanceof String) {
                             resolvedMap.put(nestedKey, resolveParameterValue(execution, (String) nestedValue));
                         } else {
                             resolvedMap.put(nestedKey, nestedValue);
                         }
                     }
-              
+
                     parameters.put(paramName, resolvedMap);
                 }
                 // 其他类型直接传递
@@ -2336,10 +2335,10 @@ public class ServiceTaskHandler implements NodeHandler {
                 }
             }
         }
-  
+
         return parameters;
     }
-  
+
     /**
      * 解析参数值
      */
@@ -2348,11 +2347,11 @@ public class ServiceTaskHandler implements NodeHandler {
         if (!valueExpr.contains("${") && !valueExpr.contains("}")) {
             return execution.getVariables().get(valueExpr);
         }
-  
+
         // 否则作为表达式评估
         return execution.getExpressionEvaluator().evaluate(valueExpr, execution.getVariables());
     }
-  
+
     /**
      * 解析表达式
      */
@@ -2360,12 +2359,12 @@ public class ServiceTaskHandler implements NodeHandler {
         if (expression == null) {
             return null;
         }
-  
+
         if (expression.contains("${")) {
             Object result = execution.getExpressionEvaluator().evaluate(expression, execution.getVariables());
             return result != null ? result.toString() : null;
         }
-  
+
         return expression;
     }
 }
@@ -2384,7 +2383,7 @@ public class ServiceTaskHandler implements NodeHandler {
   "name": "请假审批流程",
   "version": "1.0",
   "description": "员工请假审批流程",
-  
+
   "variables": [
     {
       "name": "employeeId",
@@ -2440,7 +2439,7 @@ public class ServiceTaskHandler implements NodeHandler {
       "description": "审批意见"
     }
   ],
-  
+
   "nodes": [
     {
       "id": "start",
@@ -2635,7 +2634,7 @@ public class ServiceTaskHandler implements NodeHandler {
       "properties": {}
     }
   ],
-  
+
   "transitions": [
     {
       "id": "t1",
@@ -2698,7 +2697,7 @@ public class ServiceTaskHandler implements NodeHandler {
       "condition": null
     }
   ],
-  
+
   "settings": {
     "historyLevel": "full",
     "enableNotifications": true,
@@ -2746,7 +2745,7 @@ J --> F
   "name": "订单处理流程",
   "version": "1.0",
   "description": "处理客户订单从下单到交付的完整流程",
-  
+
   "variables": [
     {
       "name": "orderId",
@@ -2803,7 +2802,7 @@ J --> F
       "defaultValue": "CREATED"
     }
   ],
-  
+
   "nodes": [
     {
       "id": "start",
@@ -3150,7 +3149,7 @@ J --> F
       "properties": {}
     }
   ],
-  
+
   "transitions": [
     {
       "id": "t1",
@@ -3327,7 +3326,7 @@ J --> F
       "condition": null
     }
   ],
-  
+
   "settings": {
     "historyLevel": "full",
     "enableNotifications": true,

@@ -25,7 +25,6 @@ description: 从 ES 分词机制讲清楚精确查询为什么要用 keyword 而
     }
   }
 }
-
 ```
 
 可能查不到结果，而改成这样就能查到：
@@ -38,7 +37,6 @@ description: 从 ES 分词机制讲清楚精确查询为什么要用 keyword 而
     }
   }
 }
-
 ```
 
 这是为什么呢？
@@ -71,7 +69,7 @@ keyword
 "attributionId": {
   "type": "text",
   "fields": {
-    "keyword": { 
+    "keyword": {
       "type": "keyword",
       "ignore_above": 256
     }
@@ -98,14 +96,12 @@ keyword
 
 ```json
 { "term": { "attributionId.keyword": "A08" } }
-
 ```
 
 全文搜索（标题、描述、内容） 用`match`或查原始字段：
 
 ```json
 { "match": { "title": "Elasticsearch 教程" } }
-
 ```
 
 ---

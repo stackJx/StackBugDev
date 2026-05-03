@@ -137,9 +137,9 @@ git flow hotfix finish 2.3.1
 
 - master/main：生产就绪代码，只接受合并
 - develop：下一版本的开发集成分支
-- feature/*：新功能开发
-- release/*：发布准备
-- hotfix/*：生产环境紧急修复
+- feature/\*：新功能开发
+- release/\*：发布准备
+- hotfix/\*：生产环境紧急修复
 
 #### 1.3 权限管理与安全实践
 
@@ -259,10 +259,10 @@ git push origin v2.0.0
 
 短期分支：
 
-- feature/*
-- bugfix/*
-- hotfix/*
-- release/*
+- feature/\*
+- bugfix/\*
+- hotfix/\*
+- release/\*
 
 业务场景：多版本并行开发
 
@@ -580,7 +580,7 @@ git push origin feature/analytics-dashboard
 # - 添加了按时间筛选数据的功能
 # - 包含单元测试和集成测试
 # - 解决了 PROJ-456 工单
-# 
+#
 # 请查看新添加的图表组件以及数据处理逻辑
 
 # 代码审查后进行修改
@@ -656,7 +656,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '16'
+          node-version: "16"
       - name: Install dependencies
         run: npm ci
       - name: Run linter
@@ -665,7 +665,6 @@ jobs:
         run: npm test
       - name: Run security scan
         run: npm run security-scan
-
 ```
 
 业务场景：持续集成实践
@@ -788,7 +787,6 @@ deploy_production:
   only:
     - main
   when: manual
-
 ```
 
 业务场景：SaaS产品部署

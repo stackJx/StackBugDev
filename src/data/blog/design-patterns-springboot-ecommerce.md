@@ -249,7 +249,7 @@ public class AmountBasedDiscountStrategy implements DiscountStrategy {
 public class DiscountService {
     private final Map<String, DiscountStrategy> strategyMap;
     private final List<DiscountStrategy> strategies;
-  
+
     // Spring会自动注入所有实现DiscountStrategy接口的Bean
     @Autowired
     public DiscountService(List<DiscountStrategy> strategies) {
@@ -258,7 +258,7 @@ public class DiscountService {
         this.strategyMap = strategies.stream()
                 .collect(Collectors.toMap(DiscountStrategy::getName, strategy -> strategy));
     }
-  
+
     /**
      * 根据策略名称计算折扣
      */
@@ -269,7 +269,7 @@ public class DiscountService {
         }
         return strategy.calculateDiscount(order);
     }
-  
+
     /**
      * 自动选择最优折扣策略
      */
@@ -377,7 +377,7 @@ public class PaymentResult {
 @Service
 public class PaymentService {
     private final Map<String, PaymentProcessor> processorMap;
-  
+
     // 自动注入所有支付处理器并构建查找映射
     @Autowired
     public PaymentService(List<PaymentProcessor> processors) {
@@ -387,7 +387,7 @@ public class PaymentService {
                     processor -> processor
                 ));
     }
-  
+
     /**
      * 处理订单支付
      */
@@ -400,7 +400,7 @@ public class PaymentService {
         // 调用处理器处理支付
         return processor.process(order);
     }
-  
+
     /**
      * 获取所有支持的支付方式
      */
@@ -456,21 +456,21 @@ OrderStatusChangeEvent --> InventoryManagementListener : notifies
 public class OrderStatusChangeEvent extends ApplicationEvent {
     private final OrderStatus oldStatus;
     private final OrderStatus newStatus;
-  
+
     public OrderStatusChangeEvent(Order order, OrderStatus oldStatus, OrderStatus newStatus) {
         super(order);
         this.oldStatus = oldStatus;
         this.newStatus = newStatus;
     }
-  
+
     public Order getOrder() {
         return (Order) getSource();
     }
-  
+
     public OrderStatus getOldStatus() {
         return oldStatus;
     }
-  
+
     public OrderStatus getNewStatus() {
         return newStatus;
     }
@@ -480,12 +480,12 @@ public class OrderStatusChangeEvent extends ApplicationEvent {
 @Service
 public class OrderService {
     private final ApplicationEventPublisher eventPublisher;
-  
+
     @Autowired
     public OrderService(ApplicationEventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
     }
-  
+
     /**
      * 更新订单状态并发布事件
      */
@@ -642,11 +642,11 @@ public class ZTOExpressAPI {
 @Component
 public class SFExpressAdapter implements ShippingTracker {
     private final SFExpressAPI sfAPI;
-  
+
     public SFExpressAdapter() {
         this.sfAPI = new SFExpressAPI();
     }
-  
+
     @Override
     public TrackingInfo getTrackingInfo(String trackingNumber) {
         // 调用顺丰API
@@ -659,13 +659,13 @@ public class SFExpressAdapter implements ShippingTracker {
             response.getAcceptTime()
         );
     }
-  
+
     // 从顺丰路由信息中提取位置
     private String extractLocation(String routeInfo) {
         // 简化处理...
         return routeInfo;
     }
-  
+
     // 解析顺丰状态描述
     private String convertStatus(String routeInfo) {
         if (routeInfo.contains("arrived")) return "In Transit";
@@ -679,12 +679,12 @@ public class SFExpressAdapter implements ShippingTracker {
 public class ZTOExpressAdapter implements ShippingTracker {
     private final ZTOExpressAPI ztoAPI;
     private final ObjectMapper objectMapper;
-  
+
     public ZTOExpressAdapter() {
         this.ztoAPI = new ZTOExpressAPI();
         this.objectMapper = new ObjectMapper();
     }
-  
+
     @Override
     public TrackingInfo getTrackingInfo(String trackingNumber) {
         // 调用中通API，返回JSON字符串
@@ -708,13 +708,13 @@ public class ZTOExpressAdapter implements ShippingTracker {
 @Service
 public class LogisticsService {
     private final Map<String, ShippingTracker> trackerMap = new HashMap<>();
-  
+
     // 注册物流追踪适配器
     public LogisticsService(SFExpressAdapter sfAdapter, ZTOExpressAdapter ztoAdapter) {
         trackerMap.put("SF", sfAdapter);
         trackerMap.put("ZTO", ztoAdapter);
     }
-  
+
     /**
      * 获取物流信息
      */
@@ -729,7 +729,7 @@ public class LogisticsService {
         // 使用追踪器获取物流信息
         return tracker.getTrackingInfo(trackingNumber);
     }
-  
+
     private String extractCourierCode(String trackingNumber) {
         // 简单解析物流单号前缀
         if (trackingNumber.startsWith("SF")) return "SF";
@@ -851,10 +851,10 @@ end
 public class DiscountStrategyTest {
     @Autowired
     private DiscountService discountService;
-  
+
     @Autowired
     private List<DiscountStrategy> strategies;
-  
+
     @Test
     public void testAllStrategiesRegistered() {
         // 验证所有策略都被正确注册
@@ -865,7 +865,7 @@ public class DiscountStrategyTest {
         assertTrue(strategyNames.contains("MEMBERSHIP"));
         assertTrue(strategyNames.contains("AMOUNT_BASED"));
     }
-  
+
     @Test
     public void testMembershipDiscount() {
         // 创建具有黄金会员的订单
@@ -874,14 +874,14 @@ public class DiscountStrategyTest {
         Order order = new Order();
         order.setCustomer(customer);
         order.setTotalAmount(new BigDecimal("1000"));
-      
+
         // 计算会员折扣
         BigDecimal discount = discountService.calculateDiscount(order, "MEMBERSHIP");
-      
+
         // 验证折扣金额 (1000 * 10%)
         assertEquals(new BigDecimal("100.00"), discount.setScale(2));
     }
-  
+
     @Test
     public void testBestDiscountStrategy() {
         // 创建白金会员的大额订单
@@ -890,10 +890,10 @@ public class DiscountStrategyTest {
         Order order = new Order();
         order.setCustomer(customer);
         order.setTotalAmount(new BigDecimal("2000"));
-      
+
         // 计算最优折扣
         BigDecimal bestDiscount = discountService.calculateBestDiscount(order);
-      
+
         // 最优应为白金会员折扣 (2000 * 15% = 300) 而非满减折扣 (100)
         assertEquals(new BigDecimal("300.00"), bestDiscount.setScale(2));
     }
@@ -909,35 +909,35 @@ public class DiscountStrategyTest {
 public class PaymentProcessorFactoryTest {
     @Autowired
     private PaymentService paymentService;
-  
+
     @Test
     public void testProcessorRegistration() {
         List<String> supportedMethods = paymentService.getSupportedPaymentMethods();
-      
+
         // 验证所有支付处理器都被正确注册
         assertEquals(2, supportedMethods.size());
         assertTrue(supportedMethods.contains("ALIPAY"));
         assertTrue(supportedMethods.contains("WECHAT"));
     }
-  
+
     @Test
     public void testProcessPaymentWithAlipay() {
         Order order = new Order();
         order.setId(1L);
         order.setTotalAmount(new BigDecimal("999.99"));
-      
+
         // 处理支付宝支付
         PaymentResult result = paymentService.processPayment(order, "ALIPAY");
-      
+
         assertTrue(result.isSuccess());
         assertNotNull(result.getTransactionId());
         assertTrue(result.getTransactionId().startsWith("ALI"));
     }
-  
+
     @Test(expected = IllegalArgumentException.class)
     public void testUnsupportedPaymentMethod() {
         Order order = new Order();
-      
+
         // 尝试使用不支持的支付方式应抛出异常
         paymentService.processPayment(order, "BITCOIN");
     }
@@ -953,53 +953,53 @@ public class PaymentProcessorFactoryTest {
 public class OrderStatusEventTest {
     @Autowired
     private OrderService orderService;
-  
+
     @Autowired
     private ApplicationContext applicationContext;
-  
+
     @MockBean
     private SMSNotificationListener smsListener;
-  
+
     @MockBean
     private InventoryManagementListener inventoryListener;
-  
+
     @Test
     public void testOrderPaidEventHandling() {
         // 创建测试订单
         Order order = new Order();
         order.setId(1L);
         order.setStatus(OrderStatus.PENDING_PAYMENT);
-      
+
         // 更新订单状态到已支付
         orderService.updateOrderStatus(order, OrderStatus.PAID);
-      
+
         // 验证库存监听器被调用，参数是正确的事件
         ArgumentCaptor<OrderStatusChangeEvent> eventCaptor = ArgumentCaptor.forClass(OrderStatusChangeEvent.class);
         verify(inventoryListener).onApplicationEvent(eventCaptor.capture());
-      
+
         OrderStatusChangeEvent capturedEvent = eventCaptor.getValue();
         assertEquals(OrderStatus.PENDING_PAYMENT, capturedEvent.getOldStatus());
         assertEquals(OrderStatus.PAID, capturedEvent.getNewStatus());
         assertEquals(order, capturedEvent.getOrder());
-      
+
         // 验证短信监听器未被触发（因为不是发货状态）
         verify(smsListener, never()).onApplicationEvent(any());
     }
-  
+
     @Test
     public void testOrderShippedEventHandling() {
         // 创建测试订单
         Order order = new Order();
         order.setId(2L);
         order.setStatus(OrderStatus.PROCESSING);
-      
+
         // 更新订单状态到已发货
         orderService.updateOrderStatus(order, OrderStatus.SHIPPED);
-      
+
         // 验证短信通知监听器被调用
         ArgumentCaptor<OrderStatusChangeEvent> eventCaptor = ArgumentCaptor.forClass(OrderStatusChangeEvent.class);
         verify(smsListener).onApplicationEvent(eventCaptor.capture());
-      
+
         OrderStatusChangeEvent capturedEvent = eventCaptor.getValue();
         assertEquals(OrderStatus.PROCESSING, capturedEvent.getOldStatus());
         assertEquals(OrderStatus.SHIPPED, capturedEvent.getNewStatus());
@@ -1016,29 +1016,29 @@ public class OrderStatusEventTest {
 public class ShippingAdapterTest {
     @Autowired
     private LogisticsService logisticsService;
-  
+
     @Test
     public void testSFExpressTracking() {
         // 获取顺丰物流信息
         TrackingInfo trackingInfo = logisticsService.getShippingInfo("SF1234567890");
-      
+
         // 验证返回的信息格式正确
         assertEquals("SF1234567890", trackingInfo.getTrackingNumber());
         assertNotNull(trackingInfo.getCurrentLocation());
         assertNotNull(trackingInfo.getStatus());
     }
-  
+
     @Test
     public void testZTOExpressTracking() {
         // 获取中通物流信息
         TrackingInfo trackingInfo = logisticsService.getShippingInfo("ZTO9876543210");
-      
+
         // 验证返回的信息格式正确
         assertEquals("ZTO9876543210", trackingInfo.getTrackingNumber());
         assertEquals("ZTO Shanghai Sorting Center", trackingInfo.getCurrentLocation());
         assertEquals("In Transit", trackingInfo.getStatus());
     }
-  
+
     @Test(expected = IllegalArgumentException.class)
     public void testUnknownCourier() {
         // 未知物流公司应抛出异常
@@ -1056,22 +1056,22 @@ public class ShippingAdapterTest {
 public class OrderProcessingIntegrationTest {
     @Autowired
     private OrderService orderService;
-  
+
     @Autowired
     private PaymentService paymentService;
-  
+
     @Autowired
     private DiscountService discountService;
-  
+
     @Autowired
     private ApplicationEventPublisher eventPublisher;
-  
+
     @MockBean
     private SMSNotificationListener smsListener;
-  
+
     @MockBean
     private InventoryManagementListener inventoryListener;
-  
+
     @Test
     public void testCompleteOrderProcess() {
         // 1. 创建订单
@@ -1079,40 +1079,40 @@ public class OrderProcessingIntegrationTest {
         customer.setId(1L);
         customer.setName("John Doe");
         customer.setMemberLevel(MemberLevel.GOLD);
-      
+
         Order order = new Order();
         order.setId(1L);
         order.setCustomer(customer);
         order.setTotalAmount(new BigDecimal("1500.00"));
         order.setStatus(OrderStatus.CREATED);
-      
+
         // 2. 应用折扣
         BigDecimal discount = discountService.calculateBestDiscount(order);
         order.setDiscountAmount(discount);
         order.setFinalAmount(order.getTotalAmount().subtract(discount));
-      
+
         // 验证折扣计算正确
         assertEquals(new BigDecimal("150.00"), discount.setScale(2));
-      
+
         // 3. 处理支付
         PaymentResult paymentResult = paymentService.processPayment(order, "ALIPAY");
         assertTrue(paymentResult.isSuccess());
-      
+
         // 4. 更新订单状态
         orderService.updateOrderStatus(order, OrderStatus.PAID);
-      
+
         // 5. 验证状态更新和事件发布
         assertEquals(OrderStatus.PAID, order.getStatus());
-      
+
         // 验证库存监听器被触发
         verify(inventoryListener).onApplicationEvent(any(OrderStatusChangeEvent.class));
-      
+
         // 6. 更新订单状态到已发货
         orderService.updateOrderStatus(order, OrderStatus.SHIPPED);
-      
+
         // 7. 验证短信通知被触发
         verify(smsListener).onApplicationEvent(any(OrderStatusChangeEvent.class));
-      
+
         // 完整流程验证成功
     }
 }

@@ -151,41 +151,41 @@ deactivate Worker
 public class OrderSubmissionService {
     private final RabbitTemplate rabbitTemplate;
     private final OrderRepository orderRepository;
-  
+
     // 构造注入
     public OrderSubmissionService(RabbitTemplate rabbitTemplate, OrderRepository orderRepository) {
         this.rabbitTemplate = rabbitTemplate;
         this.orderRepository = orderRepository;
     }
-  
+
     /**
      * 提交订单 - 只做基本验证，快速响应
      */
     public OrderResponse submitOrder(OrderRequest request) {
         // 1. 基本参数验证
         validateOrderRequest(request);
-    
+
         try {
             // 2. 创建初始订单记录
             Order order = createInitialOrder(request);
             orderRepository.save(order);
-        
+
             // 3. 发送到消息队列，异步处理
             OrderProcessingMessage message = new OrderProcessingMessage(
                 order.getId(), order.getUserId(), order.getItems());
             rabbitTemplate.convertAndSend("order-exchange", "order.created", message);
-        
+
             log.info("Order {} submitted successfully and queued for processing", order.getId());
-        
+
             // 4. 立即返回响应
-            return new OrderResponse(order.getId(), "ORDER_RECEIVED", 
+            return new OrderResponse(order.getId(), "ORDER_RECEIVED",
                                      "订单已接收，正在处理中");
         } catch (Exception e) {
             log.error("Failed to submit order", e);
             throw new OrderSubmissionException("订单提交失败，请稍后重试", e);
         }
     }
-  
+
     // 创建初始订单
     private Order createInitialOrder(OrderRequest request) {
         Order order = new Order();
@@ -196,7 +196,7 @@ public class OrderSubmissionService {
         order.setTotalAmount(calculateInitialAmount(request.getItems()));
         return order;
     }
-  
+
     // 其他辅助方法...
 }
 
@@ -210,7 +210,7 @@ public class OrderProcessingConsumer {
     private final InventoryService inventoryService;
     private final PaymentService paymentService;
     private final NotificationService notificationService;
-  
+
     // 构造注入
     public OrderProcessingConsumer(OrderRepository orderRepository,
                                   InventoryService inventoryService,
@@ -221,19 +221,19 @@ public class OrderProcessingConsumer {
         this.paymentService = paymentService;
         this.notificationService = notificationService;
     }
-  
+
     /**
      * 处理订单消息 - 执行完整的订单处理流程
      */
     @RabbitListener(queues = "order-processing-queue")
     public void processOrder(OrderProcessingMessage message) {
         log.info("Processing order: {}", message.getOrderId());
-    
+
         try {
             // 1. 获取订单详情
             Order order = orderRepository.findById(message.getOrderId())
                 .orElseThrow(() -> new OrderNotFoundException("Order not found: " + message.getOrderId()));
-        
+
             // 2. 检查并锁定库存
             try {
                 inventoryService.checkAndLockInventory(order);
@@ -241,15 +241,15 @@ public class OrderProcessingConsumer {
                 handleOrderFailure(order, "INVENTORY_ERROR", e.getMessage());
                 return;
             }
-        
+
             // 3. 更新订单状态
             order.setStatus(OrderStatus.INVENTORY_CONFIRMED);
             orderRepository.save(order);
-        
+
             // 4. 通知用户订单状态更新
-            notificationService.notifyUser(order.getUserId(), 
+            notificationService.notifyUser(order.getUserId(),
                 "订单 " + order.getId() + " 已确认，等待支付");
-        
+
             // 订单处理完成
             log.info("Order {} processed successfully", message.getOrderId());
         } catch (Exception e) {
@@ -257,14 +257,14 @@ public class OrderProcessingConsumer {
             // 异常处理...
         }
     }
-  
+
     private void handleOrderFailure(Order order, String errorCode, String errorMessage) {
         order.setStatus(OrderStatus.FAILED);
         order.setErrorCode(errorCode);
         order.setErrorMessage(errorMessage);
         orderRepository.save(order);
-    
-        notificationService.notifyUser(order.getUserId(), 
+
+        notificationService.notifyUser(order.getUserId(),
             "订单 " + order.getId() + " 处理失败: " + errorMessage);
     }
 }
@@ -285,19 +285,19 @@ public class RabbitMQConfig {
         // 持久化队列确保消息不丢失
         return new Queue("order-processing-queue", true);
     }
-  
+
     @Bean
     public DirectExchange orderExchange() {
         return new DirectExchange("order-exchange");
     }
-  
+
     @Bean
     public Binding binding(Queue orderProcessingQueue, DirectExchange orderExchange) {
         return BindingBuilder.bind(orderProcessingQueue)
             .to(orderExchange)
             .with("order.created");
     }
-  
+
     // 配置消费者并发数
     @Bean
     public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
@@ -323,17 +323,17 @@ public class RabbitMQConfig {
 public class OrderQueueMonitor {
     private final RabbitAdmin rabbitAdmin;
     private final TaskExecutor taskExecutor;
-  
+
     @Scheduled(fixedRate = 30000) // 每30秒检查一次
     public void monitorQueueSize() {
         Properties properties = rabbitAdmin.getQueueProperties("order-processing-queue");
         if (properties != null) {
             // 获取队列中的消息数量
             Integer messageCount = (Integer) properties.get("QUEUE_MESSAGE_COUNT");
-        
+
             if (messageCount != null) {
                 log.info("Current order queue size: {}", messageCount);
-            
+
                 // 根据队列长度调整消费者数量
                 if (messageCount > 1000) {
                     // 队列积压严重，增加消费者
@@ -345,7 +345,7 @@ public class OrderQueueMonitor {
             }
         }
     }
-  
+
     // 消费者管理方法...
 }
 
@@ -371,11 +371,11 @@ public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
 
 // 消费者手动确认
 @RabbitListener(queues = "order-processing-queue", ackMode = "MANUAL")
-public void processOrder(OrderProcessingMessage message, Channel channel, 
+public void processOrder(OrderProcessingMessage message, Channel channel,
                          @Header(AmqpHeaders.DELIVERY_TAG) long tag) {
     try {
         // 处理订单...
-    
+
         // 成功处理后确认消息
         channel.basicAck(tag, false);
     } catch (Exception e) {
@@ -398,15 +398,15 @@ public void processOrder(OrderProcessingMessage message, Channel channel,
 @Component
 public class OrderIdempotencyService {
     private final RedisTemplate<String, Boolean> redisTemplate;
-  
+
     // 检查并标记订单是否已处理
     public boolean markOrderAsProcessing(String orderId) {
         String key = "order:processing:" + orderId;
-    
+
         // 使用Redis的setIfAbsent实现分布式锁
         Boolean isFirstProcess = redisTemplate.opsForValue()
             .setIfAbsent(key, true, 30, TimeUnit.MINUTES);
-        
+
         return Boolean.TRUE.equals(isFirstProcess);
     }
 }
@@ -419,7 +419,7 @@ public void processOrder(OrderProcessingMessage message) {
         log.info("Order {} is already being processed, skipping", message.getOrderId());
         return;
     }
-  
+
     // 继续正常处理...
 }
 
@@ -501,7 +501,7 @@ E -->|执行| G
  */
 @Configuration
 public class ThreadPoolConfig {
-  
+
     /**
      * CPU密集型任务线程池 - 适用于计算密集型操作
      * 线程数接近CPU核心数，避免频繁上下文切换
@@ -521,7 +521,7 @@ public class ThreadPoolConfig {
             new ThreadPoolExecutor.CallerRunsPolicy()  // 拒绝策略：调用者运行
         );
     }
-  
+
     /**
      * I/O密集型任务线程池 - 适用于网络IO、数据库操作等
      * 线程数可以超过CPU核心数，因为大部分时间在等待
@@ -540,7 +540,7 @@ public class ThreadPoolConfig {
             new ThreadPoolExecutor.AbortPolicy()  // 拒绝策略：抛出异常
         );
     }
-  
+
     /**
      * 长时间运行任务线程池 - 适用于报表生成、数据分析等耗时操作
      * 线程数较少，避免占用过多资源
@@ -558,7 +558,7 @@ public class ThreadPoolConfig {
             new ThreadPoolExecutor.AbortPolicy()  // 拒绝策略：抛出异常
         );
     }
-  
+
     /**
      * 定时任务调度器 - 用于周期性任务执行
      */
@@ -587,28 +587,28 @@ public class OrderProcessingService {
     private final ExecutorService cpuIntensiveExecutor;
     private final ExecutorService ioIntensiveExecutor;
     private final ExecutorService longRunningExecutor;
-  
+
     // 其他服务依赖...
     private final InventoryService inventoryService;
     private final PaymentService paymentService;
     private final LogisticsService logisticsService;
     private final AnalyticsService analyticsService;
-  
+
     // 构造注入...
-  
+
     /**
      * 处理订单 - 使用适当的线程池处理不同步骤
      */
     public CompletableFuture<OrderResult> processOrder(Order order) {
         log.info("Starting processing for order: {}", order.getId());
-    
+
         // 1. 库存检查和锁定 (CPU密集型)
         CompletableFuture<InventoryResult> inventoryFuture = CompletableFuture
             .supplyAsync(() -> {
                 log.info("Checking inventory for order: {}", order.getId());
                 return inventoryService.checkAndLockInventory(order.getItems());
             }, cpuIntensiveExecutor);
-    
+
         // 2. 支付处理 (I/O密集型，涉及外部支付网关)
         CompletableFuture<PaymentResult> paymentFuture = inventoryFuture
             .thenComposeAsync(inventoryResult -> {
@@ -616,14 +616,14 @@ public class OrderProcessingService {
                     log.warn("Inventory check failed for order: {}", order.getId());
                     throw new OrderProcessingException("Insufficient inventory");
                 }
-            
+
                 log.info("Processing payment for order: {}", order.getId());
                 return CompletableFuture.supplyAsync(
-                    () -> paymentService.processPayment(order), 
+                    () -> paymentService.processPayment(order),
                     ioIntensiveExecutor
                 );
             }, ioIntensiveExecutor);
-    
+
         // 3. 物流安排 (I/O密集型)
         CompletableFuture<LogisticsResult> logisticsFuture = paymentFuture
             .thenComposeAsync(paymentResult -> {
@@ -631,14 +631,14 @@ public class OrderProcessingService {
                     log.warn("Payment failed for order: {}", order.getId());
                     throw new OrderProcessingException("Payment processing failed");
                 }
-            
+
                 log.info("Arranging logistics for order: {}", order.getId());
                 return CompletableFuture.supplyAsync(
                     () -> logisticsService.arrangeShipment(order),
                     ioIntensiveExecutor
                 );
             }, ioIntensiveExecutor);
-    
+
         // 4. 最终结果处理
         CompletableFuture<OrderResult> resultFuture = logisticsFuture
             .thenApplyAsync(logisticsResult -> {
@@ -649,9 +649,9 @@ public class OrderProcessingService {
                     logisticsResult.getTrackingCode(),
                     LocalDateTime.now()
                 );
-            
+
                 log.info("Order processing completed for order: {}", order.getId());
-            
+
                 // 5. 触发长时间运行的分析任务 (不阻塞主流程)
                 longRunningExecutor.submit(() -> {
                     log.info("Starting analytics for order: {}", order.getId());
@@ -660,10 +660,10 @@ public class OrderProcessingService {
                     analyticsService.updateSalesReport(order);
                     log.info("Analytics completed for order: {}", order.getId());
                 });
-            
+
                 return result;
             }, cpuIntensiveExecutor);
-    
+
         return resultFuture;
     }
 }
@@ -682,19 +682,19 @@ public class OrderProcessingService {
 @Slf4j
 public class ThreadPoolMonitorService {
     private final Map<String, ThreadPoolExecutor> threadPools;
-  
+
     // 通过构造注入收集所有线程池
     public ThreadPoolMonitorService(
             @Qualifier("cpuIntensiveExecutor") ExecutorService cpuExecutor,
             @Qualifier("ioIntensiveExecutor") ExecutorService ioExecutor,
             @Qualifier("longRunningExecutor") ExecutorService longRunningExecutor) {
-    
+
         this.threadPools = new HashMap<>();
         threadPools.put("cpu", (ThreadPoolExecutor) cpuExecutor);
         threadPools.put("io", (ThreadPoolExecutor) ioExecutor);
         threadPools.put("longRunning", (ThreadPoolExecutor) longRunningExecutor);
     }
-  
+
     // 定期收集线程池指标
     @Scheduled(fixedRate = 60000) // 每分钟执行一次
     public void monitorThreadPools() {
@@ -704,32 +704,32 @@ public class ThreadPoolMonitorService {
             int queueSize = executor.getQueue().size();
             long taskCount = executor.getTaskCount();
             long completedTaskCount = executor.getCompletedTaskCount();
-        
+
             log.info("Thread Pool '{}' stats: size={}, active={}, queue={}, tasks={}, completed={}",
                     name, poolSize, activeThreads, queueSize, taskCount, completedTaskCount);
-        
+
             // 计算线程池利用率
             double utilization = poolSize > 0 ? (double) activeThreads / poolSize : 0;
             log.info("Thread Pool '{}' utilization: {:.2f}%", name, utilization * 100);
-        
+
             // 根据监控数据动态调整线程池参数
             adjustThreadPoolIfNeeded(name, executor, utilization, queueSize);
         });
     }
-  
+
     // 根据监控结果动态调整线程池
-    private void adjustThreadPoolIfNeeded(String name, ThreadPoolExecutor executor, 
+    private void adjustThreadPoolIfNeeded(String name, ThreadPoolExecutor executor,
                                          double utilization, int queueSize) {
         // 高负载调整策略
         if (utilization > 0.75 && queueSize > 100) {
             int currentMaxThreads = executor.getMaximumPoolSize();
             int newMaxThreads = Math.min(currentMaxThreads * 2, 100); // 上限100线程
-        
-            log.info("Increasing max threads for pool '{}' from {} to {}", 
+
+            log.info("Increasing max threads for pool '{}' from {} to {}",
                     name, currentMaxThreads, newMaxThreads);
             executor.setMaximumPoolSize(newMaxThreads);
         }
-    
+
         // 低负载调整策略
         else if (utilization < 0.25 && executor.getPoolSize() > executor.getCorePoolSize()) {
             log.info("Thread pool '{}' is underutilized, allowing threads to time out", name);
@@ -751,9 +751,9 @@ public class TaskClassifier {
     private final ExecutorService cpuIntensiveExecutor;
     private final ExecutorService ioIntensiveExecutor;
     private final ExecutorService longRunningExecutor;
-  
+
     // 构造注入...
-  
+
     /**
      * 根据任务特性选择合适的执行器
      */
@@ -761,19 +761,19 @@ public class TaskClassifier {
         switch (taskType) {
             case CPU_INTENSIVE:
                 return CompletableFuture.supplyAsync(task, cpuIntensiveExecutor);
-            
+
             case IO_INTENSIVE:
                 return CompletableFuture.supplyAsync(task, ioIntensiveExecutor);
-            
+
             case LONG_RUNNING:
                 return CompletableFuture.supplyAsync(task, longRunningExecutor);
-            
+
             default:
                 log.warn("Unknown task type: {}, using default executor", taskType);
                 return CompletableFuture.supplyAsync(task, ioIntensiveExecutor);
         }
     }
-  
+
     // 任务类型枚举
     public enum TaskType {
         CPU_INTENSIVE,
@@ -801,7 +801,7 @@ public class PriorityTaskQueue extends PriorityBlockingQueue<Runnable> {
             return p1 - p2; // 数字越小优先级越高
         });
     }
-  
+
     private static int getPriority(Runnable task) {
         if (task instanceof PriorityTask) {
             return ((PriorityTask) task).getPriority();
@@ -823,17 +823,17 @@ public interface PriorityTask extends Runnable {
 public class PriorityTaskWrapper<V> implements Callable<V>, PriorityTask {
     private final Callable<V> task;
     private final int priority;
-  
+
     public PriorityTaskWrapper(Callable<V> task, int priority) {
         this.task = task;
         this.priority = priority;
     }
-  
+
     @Override
     public V call() throws Exception {
         return task.call();
     }
-  
+
     @Override
     public void run() {
         try {
@@ -842,7 +842,7 @@ public class PriorityTaskWrapper<V> implements Callable<V>, PriorityTask {
             throw new RuntimeException(e);
         }
     }
-  
+
     @Override
     public int getPriority() {
         return priority;
@@ -876,9 +876,9 @@ public ExecutorService priorityExecutor() {
 @Component
 public class TimeoutExecutor {
     private final ExecutorService executor;
-  
+
     // 构造注入...
-  
+
     /**
      * 执行带超时的任务
      * @param task 要执行的任务
@@ -889,7 +889,7 @@ public class TimeoutExecutor {
      */
     public <T> T executeWithTimeout(Supplier<T> task, long timeout, TimeUnit unit, T defaultValue) {
         CompletableFuture<T> future = CompletableFuture.supplyAsync(task, executor);
-    
+
         try {
             return future.get(timeout, unit);
         } catch (TimeoutException e) {
@@ -993,98 +993,98 @@ public class ProductDetailService {
     private final ReviewService reviewService;
     private final RecommendationService recommendationService;
     private final PromotionService promotionService;
-  
+
     // 用于执行异步任务的线程池
     private final ExecutorService executor;
-  
+
     // 构造注入...
-  
+
     /**
      * 获取商品完整详情 - 并行加载各组件数据
      */
     public ProductDetailDTO getProductDetails(Long productId, String userId) {
         long startTime = System.currentTimeMillis();
         log.info("Loading product details for product: {}, user: {}", productId, userId);
-    
+
         // 创建结果对象
         ProductDetailDTO result = new ProductDetailDTO();
         result.setProductId(productId);
-    
+
         try {
             // 1. 并行获取所有数据
             // 基本信息 - 这个是必须的，其他都可以降级
             CompletableFuture<ProductBaseInfo> baseInfoFuture = CompletableFuture
                 .supplyAsync(() -> baseInfoService.getProductInfo(productId), executor);
-        
+
             // 库存信息
             CompletableFuture<InventoryInfo> inventoryFuture = CompletableFuture
                 .supplyAsync(() -> {
                     try {
                         return inventoryService.getInventory(productId);
                     } catch (Exception e) {
-                        log.warn("Error fetching inventory for product {}: {}", 
+                        log.warn("Error fetching inventory for product {}: {}",
                                 productId, e.getMessage());
                         // 返回默认值，实现优雅降级
                         return new InventoryInfo(productId, 0, false);
                     }
                 }, executor);
-        
+
             // 价格信息
             CompletableFuture<PriceInfo> priceFuture = CompletableFuture
                 .supplyAsync(() -> {
                     try {
                         return pricingService.getPrice(productId, userId);
                     } catch (Exception e) {
-                        log.warn("Error fetching price for product {}: {}", 
+                        log.warn("Error fetching price for product {}: {}",
                                 productId, e.getMessage());
                         // 返回默认价格信息
                         return new PriceInfo(productId, BigDecimal.ZERO, null);
                     }
                 }, executor);
-        
+
             // 评价信息
             CompletableFuture<ReviewSummary> reviewFuture = CompletableFuture
                 .supplyAsync(() -> {
                     try {
                         return reviewService.getReviewSummary(productId);
                     } catch (Exception e) {
-                        log.warn("Error fetching reviews for product {}: {}", 
+                        log.warn("Error fetching reviews for product {}: {}",
                                 productId, e.getMessage());
                         // 返回空评价
                         return new ReviewSummary(productId, 0, 0.0, Collections.emptyList());
                     }
                 }, executor);
-        
+
             // 相关推荐
             CompletableFuture<List<ProductSummary>> recommendationFuture = CompletableFuture
                 .supplyAsync(() -> {
                     try {
                         return recommendationService.getRecommendations(productId, userId);
                     } catch (Exception e) {
-                        log.warn("Error fetching recommendations for product {}: {}", 
+                        log.warn("Error fetching recommendations for product {}: {}",
                                 productId, e.getMessage());
                         // 返回空推荐
                         return Collections.emptyList();
                     }
                 }, executor);
-        
+
             // 促销信息
             CompletableFuture<List<Promotion>> promotionFuture = CompletableFuture
                 .supplyAsync(() -> {
                     try {
                         return promotionService.getProductPromotions(productId);
                     } catch (Exception e) {
-                        log.warn("Error fetching promotions for product {}: {}", 
+                        log.warn("Error fetching promotions for product {}: {}",
                                 productId, e.getMessage());
                         // 返回空促销列表
                         return Collections.emptyList();
                     }
                 }, executor);
-        
+
             // 2. 等待基本信息完成 (这是必须的)
             ProductBaseInfo baseInfo = baseInfoFuture.join();
             result.setBaseInfo(baseInfo);
-        
+
             // 3. 使用超时等待其他非关键数据，避免单个服务拖慢整体
             try {
                 result.setInventory(inventoryFuture.get(500, TimeUnit.MILLISECONDS));
@@ -1092,41 +1092,41 @@ public class ProductDetailService {
                 log.warn("Timeout getting inventory data for product {}", productId);
                 result.setInventory(new InventoryInfo(productId, 0, false));
             }
-        
+
             try {
                 result.setPriceInfo(priceFuture.get(500, TimeUnit.MILLISECONDS));
             } catch (Exception e) {
                 log.warn("Timeout getting price data for product {}", productId);
                 result.setPriceInfo(new PriceInfo(productId, baseInfo.getBasePrice(), null));
             }
-        
+
             try {
                 result.setReviewSummary(reviewFuture.get(500, TimeUnit.MILLISECONDS));
             } catch (Exception e) {
                 log.warn("Timeout getting review data for product {}", productId);
                 result.setReviewSummary(new ReviewSummary(productId, 0, 0.0, Collections.emptyList()));
             }
-        
+
             try {
                 result.setRecommendations(recommendationFuture.get(500, TimeUnit.MILLISECONDS));
             } catch (Exception e) {
                 log.warn("Timeout getting recommendation data for product {}", productId);
                 result.setRecommendations(Collections.emptyList());
             }
-        
+
             try {
                 result.setPromotions(promotionFuture.get(500, TimeUnit.MILLISECONDS));
             } catch (Exception e) {
                 log.warn("Timeout getting promotion data for product {}", productId);
                 result.setPromotions(Collections.emptyList());
             }
-        
+
             long totalTime = System.currentTimeMillis() - startTime;
             log.info("Product detail assembly completed in {}ms", totalTime);
-        
+
             return result;
         } catch (Exception e) {
-            log.error("Error assembling product details for {}: {}", 
+            log.error("Error assembling product details for {}: {}",
                      productId, e.getMessage(), e);
             throw new ProductDetailException("Failed to load product details", e);
         }
@@ -1143,9 +1143,9 @@ REST控制器实现：
 @Slf4j
 public class ProductController {
     private final ProductDetailService productDetailService;
-  
+
     // 构造注入...
-  
+
     /**
      * 获取商品详情
      */
@@ -1153,13 +1153,13 @@ public class ProductController {
     public ResponseEntity<ProductDetailDTO> getProductDetails(
             @PathVariable Long productId,
             @RequestParam(required = false) String userId) {
-    
+
         try {
             // 获取匿名用户ID
             if (userId == null || userId.isEmpty()) {
                 userId = "anonymous";
             }
-        
+
             ProductDetailDTO details = productDetailService.getProductDetails(productId, userId);
             return ResponseEntity.ok(details);
         } catch (ProductNotFoundException e) {
@@ -1188,10 +1188,10 @@ public CompletableFuture<CheckoutResult> processCheckout(Checkout checkout) {
     // 1. 地址验证和库存检查可以并行
     CompletableFuture<AddressValidationResult> addressFuture = CompletableFuture
         .supplyAsync(() -> addressService.validateAddress(checkout.getShippingAddress()));
-  
+
     CompletableFuture<InventoryResult> inventoryFuture = CompletableFuture
         .supplyAsync(() -> inventoryService.checkInventory(checkout.getItems()));
-  
+
     // 2. 两者都完成后才能计算运费
     CompletableFuture<ShippingInfo> shippingFuture = addressFuture
         .thenCombine(inventoryFuture, (addressResult, inventoryResult) -> {
@@ -1199,40 +1199,40 @@ public CompletableFuture<CheckoutResult> processCheckout(Checkout checkout) {
             if (!addressResult.isValid()) {
                 throw new CheckoutException("Invalid shipping address");
             }
-        
+
             if (!inventoryResult.isAvailable()) {
                 throw new CheckoutException("Some items are out of stock");
             }
-        
+
             // 计算运费
             return shippingService.calculateShipping(
-                addressResult.getNormalizedAddress(), 
+                addressResult.getNormalizedAddress(),
                 checkout.getItems()
             );
         });
-  
+
     // 3. 促销代码验证可以独立进行
     CompletableFuture<PromotionResult> promotionFuture = CompletableFuture
         .supplyAsync(() -> {
             if (checkout.getPromoCode() != null && !checkout.getPromoCode().isEmpty()) {
                 return promotionService.validatePromoCode(
-                    checkout.getPromoCode(), 
+                    checkout.getPromoCode(),
                     checkout.getUserId(),
                     checkout.getItems()
                 );
             }
             return new PromotionResult(false, BigDecimal.ZERO);
         });
-  
+
     // 4. 最终计算订单总额并创建结果
     return shippingFuture.thenCombine(promotionFuture, (shippingInfo, promotionResult) -> {
         // 计算最终订单金额
         BigDecimal subtotal = calculateSubtotal(checkout.getItems());
-        BigDecimal discount = promotionResult.isValid() ? 
+        BigDecimal discount = promotionResult.isValid() ?
             promotionResult.getDiscountAmount() : BigDecimal.ZERO;
         BigDecimal shipping = shippingInfo.getCost();
         BigDecimal total = subtotal.subtract(discount).add(shipping);
-    
+
         // 创建最终结果
         return new CheckoutResult(
             true,
@@ -1260,7 +1260,7 @@ public CompletableFuture<ProductRecommendations> getRecommendationsWithFallback(
         .supplyAsync(() -> recommendationService.getRecommendations(productId))
         .exceptionally(ex -> {
             log.warn("Recommendation service failed: {}", ex.getMessage());
-        
+
             // 确定异常类型并执行适当降级
             if (ex.getCause() instanceof TimeoutException) {
                 // 超时错误 - 使用本地缓存
@@ -1283,7 +1283,7 @@ public <T> CompletableFuture<T> executeWithFallbackChain(
         Supplier<T> secondaryTask,
         Supplier<T> tertiaryTask,
         T defaultValue) {
-  
+
     return CompletableFuture
         .supplyAsync(primaryTask)
         .exceptionally(ex -> {
@@ -1327,16 +1327,16 @@ public class TimeoutHandler {
             long timeout,
             TimeUnit timeUnit,
             T defaultValue) {
-    
+
         CompletableFuture<T> timeoutFuture = new CompletableFuture<>();
-    
+
         // 安排一个延迟任务来完成超时
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         scheduler.schedule(() -> {
             timeoutFuture.complete(defaultValue);
             scheduler.shutdown();
         }, timeout, timeUnit);
-    
+
         // 任一future完成时完成结果
         return CompletableFuture.anyOf(future, timeoutFuture)
             .thenApply(result -> {
@@ -1352,7 +1352,7 @@ public class TimeoutHandler {
                 }
             });
     }
-  
+
     /**
      * 更简洁的超时处理方法
      */
@@ -1362,9 +1362,9 @@ public class TimeoutHandler {
             long timeout,
             TimeUnit timeUnit,
             T defaultValue) {
-    
+
         CompletableFuture<T> future = CompletableFuture.supplyAsync(task, executor);
-    
+
         return future.completeOnTimeout(defaultValue, timeout, timeUnit);
     }
 }
@@ -1381,7 +1381,7 @@ public class AsyncConfig {
     @Bean
     public Executor asyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-    
+
         // 核心线程数
         executor.setCorePoolSize(10);
         // 最大线程数
@@ -1396,11 +1396,11 @@ public class AsyncConfig {
         executor.setWaitForTasksToCompleteOnShutdown(true);
         // 等待时间
         executor.setAwaitTerminationSeconds(60);
-    
+
         executor.initialize();
         return executor;
     }
-  
+
     // 配置Spring的@Async注解使用的线程池
     @Bean
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
@@ -1503,22 +1503,22 @@ G[保证写入数据一致性]
 public class ProductCacheService {
     private final ProductRepository productRepository;
     private final RedisTemplate<String, Product> redisTemplate;
-  
+
     // 内存缓存 - 第一级缓存
     private final Map<Long, Product> localCache = new ConcurrentHashMap<>();
-  
+
     // 用于保护本地缓存的读写锁
     private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private final Lock readLock = cacheLock.readLock();
     private final Lock writeLock = cacheLock.writeLock();
-  
+
     // 缓存统计
     private final AtomicLong localHits = new AtomicLong(0);
     private final AtomicLong redisHits = new AtomicLong(0);
     private final AtomicLong databaseHits = new AtomicLong(0);
-  
+
     // 构造注入...
-  
+
     /**
      * 获取商品信息，按照多级缓存策略查找
      */
@@ -1535,15 +1535,15 @@ public class ProductCacheService {
         } finally {
             readLock.unlock();
         }
-    
+
         // 2. 本地缓存未命中，从Redis获取
         String redisKey = "product:" + productId;
         Product product = redisTemplate.opsForValue().get(redisKey);
-    
+
         if (product != null) {
             redisHits.incrementAndGet();
             log.debug("Redis cache hit for product: {}", productId);
-        
+
             // 更新本地缓存 (使用写锁)
             writeLock.lock();
             try {
@@ -1551,22 +1551,22 @@ public class ProductCacheService {
             } finally {
                 writeLock.unlock();
             }
-        
+
             return product;
         }
-    
+
         // 3. Redis也未命中，从数据库加载
         databaseHits.incrementAndGet();
         log.info("Cache miss for product: {}, loading from database", productId);
-    
+
         product = productRepository.findById(productId)
             .orElseThrow(() -> new ProductNotFoundException("Product not found: " + productId));
-        
+
         // 更新Redis缓存
         redisTemplate.opsForValue().set(redisKey, product);
         // 设置过期时间
         redisTemplate.expire(redisKey, 1, TimeUnit.HOURS);
-    
+
         // 更新本地缓存 (使用写锁)
         writeLock.lock();
         try {
@@ -1574,23 +1574,23 @@ public class ProductCacheService {
         } finally {
             writeLock.unlock();
         }
-    
+
         return product;
     }
-  
+
     /**
      * 更新商品信息 - 同时更新所有缓存级别
      */
     public void updateProduct(Product product) {
         log.info("Updating product in all cache levels: {}", product.getId());
-    
+
         // 1. 首先更新数据库
         productRepository.save(product);
-    
+
         // 2. 更新Redis缓存
         String redisKey = "product:" + product.getId();
         redisTemplate.opsForValue().set(redisKey, product);
-    
+
         // 3. 更新本地缓存 (使用写锁)
         writeLock.lock();
         try {
@@ -1599,26 +1599,26 @@ public class ProductCacheService {
             writeLock.unlock();
         }
     }
-  
+
     /**
      * 批量预热本地缓存 - 加载热门商品
      */
     @Scheduled(fixedRate = 300000) // 每5分钟执行一次
     public void preloadPopularProducts() {
         log.info("Preloading popular products into local cache");
-    
+
         // 获取热门商品ID
         List<Long> popularProductIds = productRepository.findTopViewedProductIds(200);
-    
+
         // 批量从Redis加载
         List<String> redisKeys = popularProductIds.stream()
             .map(id -> "product:" + id)
             .collect(Collectors.toList());
-        
+
         List<Product> products = redisTemplate.opsForValue().multiGet(redisKeys).stream()
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
-        
+
         // 批量更新本地缓存 (使用写锁保护批量操作)
         writeLock.lock();
         try {
@@ -1626,19 +1626,19 @@ public class ProductCacheService {
         } finally {
             writeLock.unlock();
         }
-    
+
         log.info("Preloaded {} products into local cache", products.size());
     }
-  
+
     /**
      * 缓存失效 - 商品信息变更时调用
      */
     public void invalidateCache(Long productId) {
         log.info("Invalidating cache for product: {}", productId);
-    
+
         // 删除Redis缓存
         redisTemplate.delete("product:" + productId);
-    
+
         // 删除本地缓存 (使用写锁)
         writeLock.lock();
         try {
@@ -1647,7 +1647,7 @@ public class ProductCacheService {
             writeLock.unlock();
         }
     }
-  
+
     /**
      * 获取缓存命中统计
      */
@@ -1657,17 +1657,17 @@ public class ProductCacheService {
         stats.put("redisHits", redisHits.get());
         stats.put("databaseHits", databaseHits.get());
         stats.put("localCacheSize", (long) localCache.size());
-    
+
         long totalHits = localHits.get() + redisHits.get() + databaseHits.get();
         if (totalHits > 0) {
             stats.put("localHitRate", Math.round(localHits.get() * 100.0 / totalHits));
             stats.put("redisHitRate", Math.round(redisHits.get() * 100.0 / totalHits));
             stats.put("databaseHitRate", Math.round(databaseHits.get() * 100.0 / totalHits));
         }
-    
+
         return stats;
     }
-  
+
     /**
      * 清空本地缓存
      */
@@ -1692,9 +1692,9 @@ public class ProductCacheService {
 @Slf4j
 public class ProductCacheController {
     private final ProductCacheService productCacheService;
-  
+
     // 构造注入...
-  
+
     /**
      * 获取商品信息 - 从缓存读取
      */
@@ -1710,19 +1710,19 @@ public class ProductCacheController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-  
+
     /**
      * 更新商品信息 - 同时更新缓存
      */
     @PutMapping("/{productId}")
     public ResponseEntity<Product> updateProduct(
-            @PathVariable Long productId, 
+            @PathVariable Long productId,
             @RequestBody Product product) {
-    
+
         if (!productId.equals(product.getId())) {
             return ResponseEntity.badRequest().build();
         }
-    
+
         try {
             productCacheService.updateProduct(product);
             return ResponseEntity.ok(product);
@@ -1731,7 +1731,7 @@ public class ProductCacheController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-  
+
     /**
      * 清除商品缓存
      */
@@ -1745,7 +1745,7 @@ public class ProductCacheController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-  
+
     /**
      * 获取缓存统计信息
      */
@@ -1770,25 +1770,25 @@ public class ProductCacheController {
 public enum CacheLevel {
     // 应用内存缓存 - 最快但容量有限
     LOCAL(1, Duration.ofMinutes(10)),
-  
+
     // Redis缓存 - 较快，支持分布式
     REDIS(2, Duration.ofHours(1)),
-  
+
     // 数据库 - 最慢但最权威
     DATABASE(3, null);
-  
+
     private final int level;
     private final Duration defaultTtl;
-  
+
     CacheLevel(int level, Duration defaultTtl) {
         this.level = level;
         this.defaultTtl = defaultTtl;
     }
-  
+
     public int getLevel() {
         return level;
     }
-  
+
     public Duration getDefaultTtl() {
         return defaultTtl;
     }
@@ -1800,10 +1800,10 @@ public enum CacheLevel {
 public enum CacheConsistencyStrategy {
     // 更新时直接删除缓存，读取时重建
     CACHE_ASIDE,
-  
+
     // 更新数据库后同步更新缓存
     WRITE_THROUGH,
-  
+
     // 更新数据库后异步更新缓存
     WRITE_BEHIND
 }
@@ -1822,43 +1822,43 @@ public enum CacheConsistencyStrategy {
 public class SegmentedProductCache {
     // 锁分段数量
     private static final int SEGMENTS = 16;
-  
+
     // 每个分段一个读写锁
     private final ReadWriteLock[] locks;
-  
+
     // 缓存数据
     private final Map<Long, Product> cache;
-  
+
     public SegmentedProductCache() {
         this.locks = new ReadWriteLock[SEGMENTS];
         for (int i = 0; i < SEGMENTS; i++) {
             locks[i] = new ReentrantReadWriteLock();
         }
-    
+
         cache = new ConcurrentHashMap<>();
     }
-  
+
     /**
      * 获取商品对应的分段锁索引
      */
     private int getSegment(Long productId) {
         return Math.abs(productId.hashCode() % SEGMENTS);
     }
-  
+
     /**
      * 获取商品的读锁
      */
     public Lock getReadLock(Long productId) {
         return locks[getSegment(productId)].readLock();
     }
-  
+
     /**
      * 获取商品的写锁
      */
     public Lock getWriteLock(Long productId) {
         return locks[getSegment(productId)].writeLock();
     }
-  
+
     /**
      * 获取商品
      */
@@ -1871,7 +1871,7 @@ public class SegmentedProductCache {
             lock.unlock();
         }
     }
-  
+
     /**
      * 添加或更新商品
      */
@@ -1884,7 +1884,7 @@ public class SegmentedProductCache {
             lock.unlock();
         }
     }
-  
+
     /**
      * 删除商品
      */
@@ -1915,9 +1915,9 @@ public class CacheWarmer {
     private final ProductRepository productRepository;
     private final ProductCacheService cacheService;
     private final RedisTemplate<String, Object> redisTemplate;
-  
+
     // 构造注入...
-  
+
     /**
      * 基于实时热度数据预热缓存
      */
@@ -1925,39 +1925,39 @@ public class CacheWarmer {
     public void warmCacheBasedOnHotness() {
         try {
             log.info("Starting cache warming based on product hotness");
-        
+
             // 1. 从Redis获取产品热度排行
-            Set<ZSetOperations.TypedTuple<String>> hotnessRanking = 
+            Set<ZSetOperations.TypedTuple<String>> hotnessRanking =
                 redisTemplate.opsForZSet().reverseRangeWithScores("product:hotness", 0, 199);
-            
+
             if (hotnessRanking == null || hotnessRanking.isEmpty()) {
                 log.info("No hotness data available, skipping cache warming");
                 return;
             }
-        
+
             // 2. 提取产品ID
             List<Long> productIds = hotnessRanking.stream()
                 .map(tuple -> Long.parseLong(tuple.getValue().replace("product:", "")))
                 .collect(Collectors.toList());
-            
+
             log.info("Warming cache for {} hot products", productIds.size());
-        
+
             // 3. 并行预热缓存
             productIds.parallelStream().forEach(productId -> {
                 try {
                     cacheService.getProduct(productId);
                 } catch (Exception e) {
-                    log.warn("Failed to warm cache for product {}: {}", 
+                    log.warn("Failed to warm cache for product {}: {}",
                             productId, e.getMessage());
                 }
             });
-        
+
             log.info("Cache warming completed");
         } catch (Exception e) {
             log.error("Error during cache warming: {}", e.getMessage(), e);
         }
     }
-  
+
     /**
      * 基于历史销量预热季节性热门商品
      */
@@ -1967,19 +1967,19 @@ public class CacheWarmer {
         LocalDate today = LocalDate.now();
         int month = today.getMonthValue();
         int day = today.getDayOfMonth();
-    
+
         // 获取历史上这个时间段热卖的商品
-        List<Long> seasonalProductIds = 
+        List<Long> seasonalProductIds =
             productRepository.findHistoricalHotProducts(month, day, 100);
-        
+
         log.info("Warming cache for {} seasonal hot products", seasonalProductIds.size());
-    
+
         // 预热这些商品的缓存
         for (Long productId : seasonalProductIds) {
             try {
                 cacheService.getProduct(productId);
             } catch (Exception e) {
-                log.warn("Failed to warm cache for seasonal product {}: {}", 
+                log.warn("Failed to warm cache for seasonal product {}: {}",
                         productId, e.getMessage());
             }
         }
@@ -2002,9 +2002,9 @@ public class ProductCacheConsistencyListener {
     private final ProductCacheService cacheService;
     private final JdbcTemplate jdbcTemplate;
     private final ExecutorService executor;
-  
+
     // 构造注入...
-  
+
     /**
      * 启动数据库变更监听
      */
@@ -2014,31 +2014,31 @@ public class ProductCacheConsistencyListener {
         // 这里使用简化版polling机制作为示例
         executor.submit(this::pollDatabaseChanges);
     }
-  
+
     /**
      * 轮询数据库变更
      */
     private void pollDatabaseChanges() {
         try {
             String lastCheckpoint = loadLastCheckpoint();
-        
+
             while (!Thread.currentThread().isInterrupted()) {
                 try {
                     // 查询自上次检查点以来的产品变更
                     List<Long> changedProductIds = queryChangedProducts(lastCheckpoint);
-                
+
                     if (!changedProductIds.isEmpty()) {
                         log.info("Detected {} product changes in database", changedProductIds.size());
-                    
+
                         // 更新缓存
                         for (Long productId : changedProductIds) {
                             cacheService.invalidateCache(productId);
                         }
-                    
+
                         // 更新检查点
                         lastCheckpoint = updateCheckpoint();
                     }
-                
+
                     // 暂停一段时间再检查
                     Thread.sleep(5000);
                 } catch (Exception e) {
@@ -2051,12 +2051,12 @@ public class ProductCacheConsistencyListener {
             log.info("Database change listener interrupted");
         }
     }
-  
+
     private String loadLastCheckpoint() {
         // 从持久化存储加载上次检查点
         return "2023-01-01 00:00:00";
     }
-  
+
     private List<Long> queryChangedProducts(String lastCheckpoint) {
         return jdbcTemplate.queryForList(
             "SELECT product_id FROM product_changes WHERE change_time > ?",
@@ -2064,14 +2064,14 @@ public class ProductCacheConsistencyListener {
             lastCheckpoint
         );
     }
-  
+
     private String updateCheckpoint() {
         String newCheckpoint = LocalDateTime.now().format(
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         // 持久化新检查点
         return newCheckpoint;
     }
-  
+
     @PreDestroy
     public void shutdown() {
         executor.shutdownNow();
@@ -2175,17 +2175,17 @@ Note over B,DB: 更新成功，版本=3
 public class InventoryService {
     private final JdbcTemplate jdbcTemplate;
     private final RedisTemplate<String, Integer> redisTemplate;
-  
+
     // 统计信息
     private final AtomicLong successCount = new AtomicLong(0);
     private final AtomicLong conflictCount = new AtomicLong(0);
     private final AtomicLong totalAttempts = new AtomicLong(0);
-  
+
     // 构造注入...
-  
+
     /**
      * 减少库存 - 使用乐观锁和重试机制
-     * 
+     *
      * @param productId 商品ID
      * @param quantity 减少数量
      * @param orderId 订单ID (用于幂等性控制)
@@ -2194,29 +2194,29 @@ public class InventoryService {
     @Transactional
     public boolean decreaseStock(Long productId, int quantity, String orderId) {
         totalAttempts.incrementAndGet();
-    
+
         // 幂等性检查 - 避免重复处理
         if (isProcessedOrder(orderId)) {
             log.info("Order {} already processed, skipping inventory update", orderId);
             return true;
         }
-    
+
         // 最大重试次数
         int maxRetries = 3;
         int retries = 0;
-    
+
         while (retries < maxRetries) {
             try {
                 // 1. 获取当前库存和版本号
                 InventoryRecord inventory = getInventory(productId);
-            
+
                 // 2. 检查库存是否足够
                 if (inventory.getAvailableStock() < quantity) {
-                    log.warn("Insufficient stock for product {}. Required: {}, Available: {}", 
+                    log.warn("Insufficient stock for product {}. Required: {}, Available: {}",
                             productId, quantity, inventory.getAvailableStock());
                     return false;
                 }
-            
+
                 // 3. 使用乐观锁尝试更新库存
                 int updatedRows = jdbcTemplate.update(
                     "UPDATE product_inventory SET " +
@@ -2226,47 +2226,47 @@ public class InventoryService {
                     "WHERE product_id = ? AND version = ?",
                     quantity, productId, inventory.getVersion()
                 );
-            
+
                 // 4. 检查更新是否成功
                 if (updatedRows == 1) {
                     // 更新成功，记录订单已处理
                     markOrderAsProcessed(orderId);
-                
+
                     // 更新Redis缓存
                     updateRedisStock(productId, inventory.getAvailableStock() - quantity);
-                
+
                     // 记录库存变更
-                    logInventoryChange(productId, inventory.getAvailableStock(), 
-                                      inventory.getAvailableStock() - quantity, 
+                    logInventoryChange(productId, inventory.getAvailableStock(),
+                                      inventory.getAvailableStock() - quantity,
                                       orderId);
-                
+
                     successCount.incrementAndGet();
-                    log.debug("Successfully decreased stock for product {}, new stock: {}", 
+                    log.debug("Successfully decreased stock for product {}, new stock: {}",
                              productId, inventory.getAvailableStock() - quantity);
                     return true;
                 } else {
                     // 乐观锁冲突，需要重试
                     conflictCount.incrementAndGet();
                     retries++;
-                
+
                     log.debug("Optimistic lock conflict for product {}, retry {}/{}",
                              productId, retries, maxRetries);
-                
+
                     // 使用指数退避算法，减少冲突
                     Thread.sleep(10 * (1 << retries));
                 }
             } catch (Exception e) {
-                log.error("Error decreasing stock for product {}: {}", 
+                log.error("Error decreasing stock for product {}: {}",
                          productId, e.getMessage(), e);
                 return false;
             }
         }
-    
+
         // 超过最大重试次数
         log.warn("Max retry attempts reached for product {}", productId);
         return false;
     }
-  
+
     /**
      * 增加库存 - 用于订单取消、退货等场景
      */
@@ -2276,12 +2276,12 @@ public class InventoryService {
         String idempotencyKey = "stock:increase:" + orderId;
         Boolean isFirstProcess = redisTemplate.opsForValue()
             .setIfAbsent(idempotencyKey, 1, 24, TimeUnit.HOURS);
-        
+
         if (Boolean.FALSE.equals(isFirstProcess)) {
             log.info("Stock increase for order {} already processed", orderId);
             return true;
         }
-    
+
         try {
             // 更新库存 - 这里可以直接更新，不需要乐观锁，因为增加库存不存在资源竞争
             int updated = jdbcTemplate.update(
@@ -2292,19 +2292,19 @@ public class InventoryService {
                 "WHERE product_id = ?",
                 quantity, productId
             );
-        
+
             if (updated == 1) {
                 // 获取最新库存
                 InventoryRecord inventory = getInventory(productId);
-            
+
                 // 更新Redis缓存
                 updateRedisStock(productId, inventory.getAvailableStock());
-            
+
                 // 记录库存变更
-                logInventoryChange(productId, inventory.getAvailableStock() - quantity, 
+                logInventoryChange(productId, inventory.getAvailableStock() - quantity,
                                   inventory.getAvailableStock(), orderId);
-            
-                log.debug("Successfully increased stock for product {}, new stock: {}", 
+
+                log.debug("Successfully increased stock for product {}, new stock: {}",
                          productId, inventory.getAvailableStock());
                 return true;
             } else {
@@ -2312,14 +2312,14 @@ public class InventoryService {
                 return false;
             }
         } catch (Exception e) {
-            log.error("Error increasing stock for product {}: {}", 
+            log.error("Error increasing stock for product {}: {}",
                      productId, e.getMessage(), e);
             // 删除幂等键，允许重试
             redisTemplate.delete(idempotencyKey);
             return false;
         }
     }
-  
+
     /**
      * 获取当前库存记录
      */
@@ -2327,7 +2327,7 @@ public class InventoryService {
         // 先尝试从Redis获取
         String redisKey = "inventory:" + productId;
         Integer redisStock = redisTemplate.opsForValue().get(redisKey);
-    
+
         if (redisStock != null) {
             // 从数据库获取版本号和其他信息
             return jdbcTemplate.queryForObject(
@@ -2342,7 +2342,7 @@ public class InventoryService {
                 productId
             );
         }
-    
+
         // Redis不存在，从数据库获取完整信息
         InventoryRecord inventory = jdbcTemplate.queryForObject(
             "SELECT product_id, available_stock, version, last_updated " +
@@ -2355,13 +2355,13 @@ public class InventoryService {
             ),
             productId
         );
-    
+
         // 更新Redis缓存
         updateRedisStock(productId, inventory.getAvailableStock());
-    
+
         return inventory;
     }
-  
+
     /**
      * 更新Redis库存缓存
      */
@@ -2369,7 +2369,7 @@ public class InventoryService {
         String redisKey = "inventory:" + productId;
         redisTemplate.opsForValue().set(redisKey, newStock, 1, TimeUnit.HOURS);
     }
-  
+
     /**
      * 标记订单已处理（幂等性控制）
      */
@@ -2377,7 +2377,7 @@ public class InventoryService {
         String key = "stock:order:" + orderId;
         redisTemplate.opsForValue().set(key, 1, 24, TimeUnit.HOURS);
     }
-  
+
     /**
      * 检查订单是否已处理（幂等性检查）
      */
@@ -2385,7 +2385,7 @@ public class InventoryService {
         String key = "stock:order:" + orderId;
         return Boolean.TRUE.equals(redisTemplate.hasKey(key));
     }
-  
+
     /**
      * 记录库存变更日志
      */
@@ -2394,7 +2394,7 @@ public class InventoryService {
         log.info("Inventory change: product={}, old={}, new={}, order={}",
                 productId, oldStock, newStock, orderId);
     }
-  
+
     /**
      * 获取库存服务统计信息
      */
@@ -2403,16 +2403,16 @@ public class InventoryService {
         stats.put("successCount", successCount.get());
         stats.put("conflictCount", conflictCount.get());
         stats.put("totalAttempts", totalAttempts.get());
-    
+
         long total = totalAttempts.get();
         if (total > 0) {
             stats.put("successRate", (double) successCount.get() / total);
             stats.put("conflictRate", (double) conflictCount.get() / total);
         }
-    
+
         return stats;
     }
-  
+
     /**
      * 库存记录类
      */
@@ -2436,27 +2436,27 @@ public class InventoryService {
 @Slf4j
 public class InventoryController {
     private final InventoryService inventoryService;
-  
+
     // 构造注入...
-  
+
     /**
      * 扣减库存 - 用于下单
      */
     @PostMapping("/decrease")
     public ResponseEntity<Map<String, Object>> decreaseStock(
             @RequestBody StockUpdateRequest request) {
-    
+
         log.info("Received stock decrease request: {}", request);
-    
+
         boolean success = inventoryService.decreaseStock(
-            request.getProductId(), 
+            request.getProductId(),
             request.getQuantity(),
             request.getOrderId()
         );
-    
+
         Map<String, Object> response = new HashMap<>();
         response.put("success", success);
-    
+
         if (success) {
             return ResponseEntity.ok(response);
         } else {
@@ -2464,25 +2464,25 @@ public class InventoryController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
         }
     }
-  
+
     /**
      * 增加库存 - 用于订单取消
      */
     @PostMapping("/increase")
     public ResponseEntity<Map<String, Object>> increaseStock(
             @RequestBody StockUpdateRequest request) {
-    
+
         log.info("Received stock increase request: {}", request);
-    
+
         boolean success = inventoryService.increaseStock(
-            request.getProductId(), 
+            request.getProductId(),
             request.getQuantity(),
             request.getOrderId()
         );
-    
+
         Map<String, Object> response = new HashMap<>();
         response.put("success", success);
-    
+
         if (success) {
             return ResponseEntity.ok(response);
         } else {
@@ -2490,7 +2490,7 @@ public class InventoryController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-  
+
     /**
      * 获取库存服务统计信息
      */
@@ -2498,7 +2498,7 @@ public class InventoryController {
     public ResponseEntity<Map<String, Object>> getStatistics() {
         return ResponseEntity.ok(inventoryService.getStatistics());
     }
-  
+
     /**
      * 库存更新请求
      */
@@ -2530,7 +2530,7 @@ public boolean decreaseStockWithVersion(Long productId, int quantity, int versio
         "WHERE product_id = ? AND version = ?",
         quantity, productId, version
     );
-  
+
     return updated == 1;
 }
 
@@ -2545,7 +2545,7 @@ public boolean decreaseStockWithTimestamp(Long productId, int quantity, Timestam
         "WHERE product_id = ? AND last_updated = ?",
         quantity, productId, lastUpdated
     );
-  
+
     return updated == 1;
 }
 
@@ -2559,7 +2559,7 @@ public boolean decreaseStockWithValueCheck(Long productId, int quantity, int exp
         "WHERE product_id = ? AND available_stock = ?",
         quantity, productId, expectedStock
     );
-  
+
     return updated == 1;
 }
 
@@ -2584,18 +2584,18 @@ public class RetryStrategy {
     public <T> T executeWithRetry(Supplier<T> operation, int maxRetries) {
         int retries = 0;
         Exception lastException = null;
-    
+
         while (retries < maxRetries) {
             try {
                 return operation.get();
             } catch (Exception e) {
                 lastException = e;
                 retries++;
-            
+
                 if (retries >= maxRetries) {
                     break;
                 }
-            
+
                 // 指数退避算法，随机化启动时间以减少冲突
                 long delay = calculateBackoffDelay(retries);
                 try {
@@ -2606,10 +2606,10 @@ public class RetryStrategy {
                 }
             }
         }
-    
+
         throw new RuntimeException("Operation failed after " + retries + " retries", lastException);
     }
-  
+
     /**
      * 计算退避延迟
      * 使用指数退避算法加随机因子
@@ -2617,13 +2617,13 @@ public class RetryStrategy {
     private long calculateBackoffDelay(int retryCount) {
         // 基础延迟 10ms
         long baseDelay = 10;
-    
+
         // 指数增长，重试次数越多，等待越长
         long exponentialDelay = baseDelay * (1L << retryCount);
-    
+
         // 添加随机因子(0.5-1.5之间的随机乘数)，避免多线程同时重试
         double randomFactor = 0.5 + Math.random();
-    
+
         // 计算最终延迟，上限为5秒
         return Math.min((long)(exponentialDelay * randomFactor), 5000);
     }
@@ -2657,9 +2657,9 @@ public boolean decreaseStock(Long productId, int quantity, String orderId) {
 @Component
 public class IdempotencyService {
     private final RedisTemplate<String, Object> redisTemplate;
-  
+
     // 构造注入...
-  
+
     /**
      * 检查并标记操作为已处理
      * @param key 幂等键
@@ -2672,24 +2672,24 @@ public class IdempotencyService {
         Boolean result = redisTemplate.opsForValue().setIfAbsent(redisKey, 1, ttl, timeUnit);
         return Boolean.TRUE.equals(result);
     }
-  
+
     /**
      * 删除幂等标记（用于回滚操作）
      */
     public void removeMark(String key) {
         redisTemplate.delete("idempotency:" + key);
     }
-  
+
     /**
      * 批量检查操作是否已处理
      */
     public Map<String, Boolean> batchCheckAndMark(List<String> keys, long ttl, TimeUnit timeUnit) {
         Map<String, Boolean> results = new HashMap<>();
-    
+
         for (String key : keys) {
             results.put(key, checkAndMark(key, ttl, timeUnit));
         }
-    
+
         return results;
     }
 }
@@ -2822,53 +2822,53 @@ public class ThreadPoolMonitorConfig {
     public MeterBinder threadPoolMetrics(
             @Qualifier("cpuIntensiveExecutor") ThreadPoolExecutor cpuPool,
             @Qualifier("ioIntensiveExecutor") ThreadPoolExecutor ioPool) {
-    
+
         return registry -> {
             // CPU密集型线程池指标
             registerThreadPoolMetrics(registry, "cpu_pool", cpuPool);
-        
+
             // IO密集型线程池指标
             registerThreadPoolMetrics(registry, "io_pool", ioPool);
         };
     }
-  
+
     private void registerThreadPoolMetrics(MeterRegistry registry, String name, ThreadPoolExecutor pool) {
         // 活跃线程数
         Gauge.builder("threadpool." + name + ".active_threads", pool, ThreadPoolExecutor::getActiveCount)
             .description("Number of active threads")
             .register(registry);
-        
+
         // 线程池大小
         Gauge.builder("threadpool." + name + ".pool_size", pool, ThreadPoolExecutor::getPoolSize)
             .description("Current pool size")
             .register(registry);
-        
+
         // 核心线程数
         Gauge.builder("threadpool." + name + ".core_pool_size", pool, ThreadPoolExecutor::getCorePoolSize)
             .description("Core pool size")
             .register(registry);
-        
+
         // 最大线程数
         Gauge.builder("threadpool." + name + ".max_pool_size", pool, ThreadPoolExecutor::getMaximumPoolSize)
             .description("Maximum pool size")
             .register(registry);
-        
+
         // 队列大小
         Gauge.builder("threadpool." + name + ".queue_size", pool, e -> e.getQueue().size())
             .description("Current queue size")
             .register(registry);
-        
+
         // 队列剩余容量
-        Gauge.builder("threadpool." + name + ".queue_remaining_capacity", 
+        Gauge.builder("threadpool." + name + ".queue_remaining_capacity",
                      pool, e -> e.getQueue().remainingCapacity())
             .description("Remaining queue capacity")
             .register(registry);
-        
+
         // 完成任务数
         Gauge.builder("threadpool." + name + ".completed_tasks", pool, ThreadPoolExecutor::getCompletedTaskCount)
             .description("Completed task count")
             .register(registry);
-        
+
         // 总任务数
         Gauge.builder("threadpool." + name + ".task_count", pool, ThreadPoolExecutor::getTaskCount)
             .description("Task count")
@@ -2888,22 +2888,22 @@ public class CacheMonitorConfig {
             Gauge.builder("cache.product.size", cacheService, service -> service.getCacheSize())
                 .description("Number of items in product cache")
                 .register(registry);
-            
+
             // 缓存命中率
             Gauge.builder("cache.product.hit_rate", cacheService, service -> service.getHitRate())
                 .description("Product cache hit rate")
                 .register(registry);
-            
+
             // 缓存命中次数
             Gauge.builder("cache.product.hits", cacheService, service -> service.getHits())
                 .description("Product cache hits")
                 .register(registry);
-            
+
             // 缓存未命中次数
             Gauge.builder("cache.product.misses", cacheService, service -> service.getMisses())
                 .description("Product cache misses")
                 .register(registry);
-            
+
             // 缓存更新次数
             Gauge.builder("cache.product.updates", cacheService, service -> service.getUpdates())
                 .description("Product cache updates")
@@ -2924,26 +2924,26 @@ public class InventoryMonitorConfig {
             Counter.builder("inventory.operations.success")
                 .description("Number of successful inventory operations")
                 .register(registry);
-            
+
             // 失败操作计数器
             Counter.builder("inventory.operations.failure")
                 .description("Number of failed inventory operations")
                 .register(registry);
-            
+
             // 乐观锁冲突计数器
             Counter.builder("inventory.operations.conflicts")
                 .description("Number of optimistic lock conflicts")
                 .register(registry);
-            
+
             // 操作耗时计时器
             Timer.builder("inventory.operations.duration")
                 .description("Time taken for inventory operations")
                 .publishPercentileHistogram()
                 .register(registry);
-            
+
             // 当前库存水平
             inventoryService.getAllProductIds().forEach(productId -> {
-                Gauge.builder("inventory.stock.level", inventoryService, 
+                Gauge.builder("inventory.stock.level", inventoryService,
                             service -> service.getAvailableStock(productId))
                     .tag("productId", productId.toString())
                     .description("Current stock level")
@@ -3106,24 +3106,24 @@ public List<ProductInfo> getProductDetails(List<Long> productIds) {
  */
 public class ProductShardingStrategy {
     private final int shardCount;
-  
+
     public ProductShardingStrategy(int shardCount) {
         this.shardCount = shardCount;
     }
-  
+
     /**
      * 获取商品分片ID
      */
     public int getShardId(Long productId) {
         return Math.abs(productId.hashCode() % shardCount);
     }
-  
+
     /**
      * 获取同一分片的所有商品
      */
     public List<Long> getProductsInSameShard(Long productId, List<Long> allProducts) {
         int targetShard = getShardId(productId);
-    
+
         return allProducts.stream()
             .filter(id -> getShardId(id) == targetShard)
             .collect(Collectors.toList());
@@ -3146,19 +3146,19 @@ public class BatchProcessor<T, R> {
     private final int batchSize;
     private final int maxWaitTime;
     private final BiFunction<List<T>, Integer, List<R>> batchFunction;
-  
+
     private final BlockingQueue<BatchItem<T, R>> queue;
     private final ExecutorService executor;
-  
+
     // 构造方法...
-  
+
     /**
      * 提交单个项目，自动批处理
      */
     public CompletableFuture<R> submitItem(T item) {
         CompletableFuture<R> future = new CompletableFuture<>();
         BatchItem<T, R> batchItem = new BatchItem<>(item, future);
-    
+
         try {
             queue.put(batchItem);
             // 如果队列达到批次大小，触发处理
@@ -3169,26 +3169,26 @@ public class BatchProcessor<T, R> {
             Thread.currentThread().interrupt();
             future.completeExceptionally(e);
         }
-    
+
         return future;
     }
-  
+
     /**
      * 处理批次
      */
     private void processBatch() {
         List<BatchItem<T, R>> batch = new ArrayList<>(batchSize);
         int drained = queue.drainTo(batch, batchSize);
-    
+
         if (drained > 0) {
             List<T> items = batch.stream()
                 .map(BatchItem::getItem)
                 .collect(Collectors.toList());
-            
+
             try {
                 // 调用批处理函数
                 List<R> results = batchFunction.apply(items, drained);
-            
+
                 // 完成所有future
                 for (int i = 0; i < drained; i++) {
                     batch.get(i).getFuture().complete(results.get(i));
@@ -3199,7 +3199,7 @@ public class BatchProcessor<T, R> {
             }
         }
     }
-  
+
     /**
      * 批处理项包装类
      */
@@ -3227,30 +3227,30 @@ public class IntelligentCacheWarmer {
     private final ProductRepository productRepository;
     private final ProductCacheService cacheService;
     private final CacheWarmerStats stats;
-  
+
     /**
      * 基于历史访问模式预热
      */
     @Scheduled(cron = "0 0 3 * * *") // 每天凌晨3点
     public void warmCacheBasedOnHistoricalPatterns() {
         log.info("Starting cache warming based on historical access patterns");
-    
+
         // 分析最近24小时的访问日志
         Map<Long, Integer> accessFrequency = analyzeAccessLogs();
-    
+
         // 选择Top 500热门商品
         List<Long> topProducts = accessFrequency.entrySet().stream()
             .sorted(Map.Entry.<Long, Integer>comparingByValue().reversed())
             .limit(500)
             .map(Map.Entry::getKey)
             .collect(Collectors.toList());
-        
+
         // 多线程预热缓存
         StopWatch watch = new StopWatch();
         watch.start();
-    
+
         AtomicInteger successCounter = new AtomicInteger(0);
-    
+
         topProducts.parallelStream().forEach(productId -> {
             try {
                 cacheService.getProduct(productId);
@@ -3259,15 +3259,15 @@ public class IntelligentCacheWarmer {
                 log.warn("Failed to warm cache for product {}: {}", productId, e.getMessage());
             }
         });
-    
+
         watch.stop();
-        log.info("Cache warming completed. Loaded {}/{} products in {}ms", 
+        log.info("Cache warming completed. Loaded {}/{} products in {}ms",
                 successCounter.get(), topProducts.size(), watch.getTotalTimeMillis());
-    
+
         // 更新统计信息
         stats.recordWarming(topProducts.size(), successCounter.get(), watch.getTotalTimeMillis());
     }
-  
+
     /**
      * 分析访问日志，返回商品访问频率
      */
@@ -3287,9 +3287,9 @@ public class IntelligentCacheWarmer {
 ```java
 /**
  * JVM参数推荐
- * 
+ *
  * 对于低延迟高吞吐量的服务，建议使用G1 GC:
- * -XX:+UseG1GC 
+ * -XX:+UseG1GC
  * -XX:MaxGCPauseMillis=200
  * -XX:InitiatingHeapOccupancyPercent=70
  * -XX:G1HeapRegionSize=8m
@@ -3306,7 +3306,7 @@ public class ProductDTOPool extends ObjectPool<ProductDTO> {
     protected ProductDTO createObject() {
         return new ProductDTO();
     }
-  
+
     @Override
     protected void resetObject(ProductDTO obj) {
         obj.setId(null);
@@ -3315,11 +3315,11 @@ public class ProductDTOPool extends ObjectPool<ProductDTO> {
         obj.setDescription(null);
         obj.setAttributes(null);
     }
-  
+
     public ProductDTO borrowProductDTO() {
         return borrow();
     }
-  
+
     public void returnProductDTO(ProductDTO dto) {
         release(dto);
     }
@@ -3330,16 +3330,16 @@ public class ProductDTOPool extends ObjectPool<ProductDTO> {
  */
 public List<ProductDTO> getProductsWithPool(List<Long> productIds) {
     List<ProductDTO> results = new ArrayList<>(productIds.size());
-  
+
     try {
         for (Long id : productIds) {
             ProductDTO dto = productDTOPool.borrowProductDTO();
             populateDTO(dto, id);
             results.add(dto);
         }
-    
+
         // 处理结果...
-    
+
         return results;
     } finally {
         // 使用完后归还所有对象到池
@@ -3364,27 +3364,27 @@ public class AsyncFileLogger {
     private final BlockingQueue<LogEntry> queue;
     private final ExecutorService executor;
     private final AtomicBoolean running = new AtomicBoolean(true);
-  
+
     public AsyncFileLogger() {
         // 有界队列提供背压
         this.queue = new LinkedBlockingQueue<>(10_000);
         this.executor = Executors.newSingleThreadExecutor();
-    
+
         // 启动消费者线程
         executor.submit(this::processLogEntries);
     }
-  
+
     /**
      * 异步记录日志
      * @return 队列是否接收了日志条目
      */
     public boolean log(String message, String level) {
         LogEntry entry = new LogEntry(message, level, System.currentTimeMillis());
-    
+
         // 使用offer而不是add，实现背压 - 队列满时不阻塞
         return queue.offer(entry);
     }
-  
+
     /**
      * 处理日志条目
      */
@@ -3402,11 +3402,11 @@ public class AsyncFileLogger {
             log.warn("Log processor interrupted");
         }
     }
-  
+
     private void writeToFile(LogEntry entry) {
         // 实际的文件写入实现...
     }
-  
+
     @PreDestroy
     public void shutdown() {
         running.set(false);
@@ -3420,7 +3420,7 @@ public class AsyncFileLogger {
             executor.shutdownNow();
         }
     }
-  
+
     @Data
     @AllArgsConstructor
     private static class LogEntry {

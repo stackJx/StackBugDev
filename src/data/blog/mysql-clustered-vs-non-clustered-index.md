@@ -28,13 +28,13 @@ CREATE TABLE student (
 
 ```
 
-| id | name | age | score |
-| --- | --- | --- | --- |
-| 1 | 张三 | 20 | 88.5 |
-| 2 | 李四 | 21 | 92.0 |
-| 3 | 王五 | 19 | 76.5 |
-| 4 | 赵六 | 22 | 95.0 |
-| 5 | 张三 | 23 | 81.0 |
+| id  | name | age | score |
+| --- | ---- | --- | ----- |
+| 1   | 张三 | 20  | 88.5  |
+| 2   | 李四 | 21  | 92.0  |
+| 3   | 王五 | 19  | 76.5  |
+| 4   | 赵六 | 22  | 95.0  |
+| 5   | 张三 | 23  | 81.0  |
 
 ---
 
@@ -261,10 +261,10 @@ EXPLAIN SELECT * FROM student WHERE name LIKE '张%' AND age > 21;
 
 ```
 
-| Extra 列 | 含义 |
-| --- | --- |
-| `Using index condition` | 使用了索引下推 |
-| `Using where` | 没有 ICP，在 Server 层过滤 |
+| Extra 列                | 含义                       |
+| ----------------------- | -------------------------- |
+| `Using index condition` | 使用了索引下推             |
+| `Using where`           | 没有 ICP，在 Server 层过滤 |
 
 ### ICP 生效条件
 

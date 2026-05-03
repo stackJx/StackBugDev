@@ -231,7 +231,7 @@ github - 完整 GitHub 操作：
 
 需要编程相关信息？ ├─ 官方文档/API参考 → context7（最高优先级，包含所有技术栈） └─ 最新博客/文章/教程 → firecrawl（通用后备）
 
-需要操作 GitHub？ ├─ 搜索代码 → github.search_code ├─ 读取文件/文档 → github.get_file_contents ├─ 管理 PR/Issue → github.create_/update_ └─ 代码审查 → github.request_copilot_review
+需要操作 GitHub？ ├─ 搜索代码 → github.search*code ├─ 读取文件/文档 → github.get_file_contents ├─ 管理 PR/Issue → github.create*/update\_ └─ 代码审查 → github.request_copilot_review
 
 ##### ```
 

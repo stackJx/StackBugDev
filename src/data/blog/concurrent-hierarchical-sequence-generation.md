@@ -82,12 +82,12 @@ User2->>Database: 插入新知识点(序号=6) ❌重复！
 
 #### 2.2 常见并发控制方式
 
-| 控制方式 | 优点 | 缺点 | 适用场景 |
-| --- | --- | --- | --- |
-| 悲观锁 | 安全性高，防止并发冲突 | 性能较低，可能导致阻塞 | 高冲突、低频率操作 |
-| 乐观锁 | 性能较高，不会阻塞 | 可能失败需重试，实现复杂 | 低冲突、高频率操作 |
-| 分布式锁 | 支持跨服务器协调 | 实现复杂，有性能开销 | 分布式系统环境 |
-| 数据库事务隔离 | 实现简单，依赖数据库 | 不同隔离级别效果不同 | 单体应用场景 |
+| 控制方式       | 优点                   | 缺点                     | 适用场景           |
+| -------------- | ---------------------- | ------------------------ | ------------------ |
+| 悲观锁         | 安全性高，防止并发冲突 | 性能较低，可能导致阻塞   | 高冲突、低频率操作 |
+| 乐观锁         | 性能较高，不会阻塞     | 可能失败需重试，实现复杂 | 低冲突、高频率操作 |
+| 分布式锁       | 支持跨服务器协调       | 实现复杂，有性能开销     | 分布式系统环境     |
+| 数据库事务隔离 | 实现简单，依赖数据库   | 不同隔离级别效果不同     | 单体应用场景       |
 
 ### 3. 技术方案设计
 
@@ -158,23 +158,23 @@ import java.time.LocalDateTime;
 @Data
 @TableName("knowledge_point")
 public class KnowledgePoint {
-  
+
     @TableId(type = IdType.AUTO)
     private Long id;
-  
+
     private String title;
-  
+
     private Long parentId;
-  
+
     private Integer sn;
-  
+
     private Integer level;
-  
+
     private String path;
-  
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
-  
+
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 }
@@ -193,14 +193,14 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 public interface KnowledgePointMapper extends BaseMapper<KnowledgePoint> {
-  
+
     /**
      * 获取指定父节点下的最大序号
      * SELECT COALESCE(MAX(sn), 0) FROM knowledge_point WHERE parent_id = #{parentId} FOR UPDATE
      */
     @Select("SELECT COALESCE(MAX(sn), 0) FROM knowledge_point WHERE parent_id = #{parentId} FOR UPDATE")
     Integer getMaxSnByParentId(@Param("parentId") Long parentId);
-  
+
     /**
      * 根据ID锁定记录
      * SELECT * FROM knowledge_point WHERE id = #{id} FOR UPDATE
@@ -219,7 +219,7 @@ package com.example.knowledge.service;
 import com.example.knowledge.entity.KnowledgePoint;
 
 public interface KnowledgePointService {
-  
+
     /**
      * 创建知识点并生成序号
      * @param knowledgePoint 知识点信息
@@ -259,7 +259,7 @@ public class KnowledgePointServiceImpl extends ServiceImpl<KnowledgePointMapper,
             parentId = 0L;  // 根节点的parentId为0
             knowledgePoint.setParentId(parentId);
         }
-    
+
         // 锁定父节点以防止并发问题
         if (parentId > 0) {
             KnowledgePoint parent = baseMapper.lockById(parentId);
@@ -270,12 +270,12 @@ public class KnowledgePointServiceImpl extends ServiceImpl<KnowledgePointMapper,
         } else {
             knowledgePoint.setLevel(1);  // 根节点层级为1
         }
-    
+
         // 获取当前层级最大序号并加锁
         Integer maxSn = baseMapper.getMaxSnByParentId(parentId);
         Integer newSn = maxSn + 1;
         knowledgePoint.setSn(newSn);
-    
+
         // 构建路径
         String parentPath = "";
         if (parentId > 0) {
@@ -284,12 +284,12 @@ public class KnowledgePointServiceImpl extends ServiceImpl<KnowledgePointMapper,
         }
         String path = parentPath.isEmpty() ? String.valueOf(newSn) : parentPath + "." + newSn;
         knowledgePoint.setPath(path);
-    
+
         // 保存知识点
         save(knowledgePoint);
-        log.info("创建知识点成功: id={}, title={}, sn={}, path={}", 
+        log.info("创建知识点成功: id={}, title={}, sn={}, path={}",
                 knowledgePoint.getId(), knowledgePoint.getTitle(), newSn, path);
-    
+
         return knowledgePoint;
     }
 }
@@ -323,7 +323,7 @@ public class DistributedKnowledgePointServiceImpl extends ServiceImpl<KnowledgeP
 
     @Autowired
     private RedissonClient redissonClient;
-  
+
     private static final String LOCK_PREFIX = "knowledge_point_lock:";
 
     /**
@@ -337,18 +337,18 @@ public class DistributedKnowledgePointServiceImpl extends ServiceImpl<KnowledgeP
             parentId = 0L;  // 根节点的parentId为0
             knowledgePoint.setParentId(parentId);
         }
-    
+
         // 获取分布式锁
         String lockKey = LOCK_PREFIX + parentId;
         RLock lock = redissonClient.getLock(lockKey);
-    
+
         try {
             // 尝试获取锁，最多等待10秒，锁持有30秒自动释放
             boolean locked = lock.tryLock(10, 30, TimeUnit.SECONDS);
             if (!locked) {
                 throw new RuntimeException("获取锁失败，请稍后重试");
             }
-        
+
             // 设置层级
             if (parentId > 0) {
                 KnowledgePoint parent = getById(parentId);
@@ -359,12 +359,12 @@ public class DistributedKnowledgePointServiceImpl extends ServiceImpl<KnowledgeP
             } else {
                 knowledgePoint.setLevel(1);  // 根节点层级为1
             }
-        
+
             // 获取当前层级最大序号
             Integer maxSn = baseMapper.getMaxSnByParentId(parentId);
             Integer newSn = maxSn + 1;
             knowledgePoint.setSn(newSn);
-        
+
             // 构建路径
             String parentPath = "";
             if (parentId > 0) {
@@ -373,14 +373,14 @@ public class DistributedKnowledgePointServiceImpl extends ServiceImpl<KnowledgeP
             }
             String path = parentPath.isEmpty() ? String.valueOf(newSn) : parentPath + "." + newSn;
             knowledgePoint.setPath(path);
-        
+
             // 保存知识点
             save(knowledgePoint);
-            log.info("创建知识点成功: id={}, title={}, sn={}, path={}", 
+            log.info("创建知识点成功: id={}, title={}, sn={}, path={}",
                     knowledgePoint.getId(), knowledgePoint.getTitle(), newSn, path);
-        
+
             return knowledgePoint;
-        
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("获取锁过程被中断", e);
@@ -430,7 +430,7 @@ public class OptimisticKnowledgePointServiceImpl extends ServiceImpl<KnowledgePo
             parentId = 0L;
             knowledgePoint.setParentId(parentId);
         }
-    
+
         // 设置层级
         if (parentId > 0) {
             KnowledgePoint parent = getById(parentId);
@@ -441,7 +441,7 @@ public class OptimisticKnowledgePointServiceImpl extends ServiceImpl<KnowledgePo
         } else {
             knowledgePoint.setLevel(1);
         }
-    
+
         // 获取当前层级最大序号(不加锁)
         Integer maxSn = lambdaQuery()
                 .eq(KnowledgePoint::getParentId, parentId)
@@ -449,10 +449,10 @@ public class OptimisticKnowledgePointServiceImpl extends ServiceImpl<KnowledgePo
                 .last("LIMIT 1")
                 .one()
                 .getSn();
-    
+
         Integer newSn = (maxSn == null) ? 1 : maxSn + 1;
         knowledgePoint.setSn(newSn);
-    
+
         // 构建路径
         String parentPath = "";
         if (parentId > 0) {
@@ -461,25 +461,25 @@ public class OptimisticKnowledgePointServiceImpl extends ServiceImpl<KnowledgePo
         }
         String path = parentPath.isEmpty() ? String.valueOf(newSn) : parentPath + "." + newSn;
         knowledgePoint.setPath(path);
-    
+
         try {
             // 尝试保存并检查是否存在相同序号的记录
             boolean success = save(knowledgePoint);
-        
+
             // 检查是否已存在相同父节点和序号的记录
             long duplicateCount = lambdaQuery()
                     .eq(KnowledgePoint::getParentId, parentId)
                     .eq(KnowledgePoint::getSn, newSn)
                     .count();
-                
+
             if (duplicateCount > 1) {
                 // 发现重复，抛出异常触发重试
                 throw new OptimisticLockingFailureException("序号冲突，需要重试");
             }
-        
-            log.info("创建知识点成功: id={}, title={}, sn={}, path={}", 
+
+            log.info("创建知识点成功: id={}, title={}, sn={}, path={}",
                     knowledgePoint.getId(), knowledgePoint.getTitle(), newSn, path);
-        
+
             return knowledgePoint;
         } catch (Exception e) {
             if (!(e instanceof OptimisticLockingFailureException)) {
@@ -508,12 +508,12 @@ public class KnowledgePointController {
 
     @Autowired
     private KnowledgePointService knowledgePointService;
-  
+
     @PostMapping
     public KnowledgePoint create(@RequestBody KnowledgePoint knowledgePoint) {
         return knowledgePointService.createKnowledgePoint(knowledgePoint);
     }
-  
+
     @GetMapping("/{id}")
     public KnowledgePoint getById(@PathVariable Long id) {
         return knowledgePointService.getById(id);
@@ -528,11 +528,11 @@ public class KnowledgePointController {
 
 不同并发控制策略在不同并发环境下的测试结果：
 
-| 并发策略 | 10并发 | 50并发 | 100并发 | 序号准确性 |
-| --- | --- | --- | --- | --- |
-| 悲观锁 | 287 ops/sec | 142 ops/sec | 73 ops/sec | 100% |
-| 乐观锁 | 412 ops/sec | 198 ops/sec | 89 ops/sec | 99.7% |
-| 分布式锁 | 256 ops/sec | 134 ops/sec | 68 ops/sec | 100% |
+| 并发策略 | 10并发      | 50并发      | 100并发    | 序号准确性 |
+| -------- | ----------- | ----------- | ---------- | ---------- |
+| 悲观锁   | 287 ops/sec | 142 ops/sec | 73 ops/sec | 100%       |
+| 乐观锁   | 412 ops/sec | 198 ops/sec | 89 ops/sec | 99.7%      |
+| 分布式锁 | 256 ops/sec | 134 ops/sec | 68 ops/sec | 100%       |
 
 #### 5.2 不同策略的适用场景
 

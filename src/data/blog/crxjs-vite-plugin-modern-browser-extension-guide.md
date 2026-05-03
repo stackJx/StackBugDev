@@ -55,20 +55,15 @@ npm install tailwindcss @tailwindcss/vite
 创建或修改`vite.config.ts`文件：
 
 ```js
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { crx } from '@crxjs/vite-plugin'
-import manifest from './manifest.json'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { crx } from "@crxjs/vite-plugin";
+import manifest from "./manifest.json";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  plugins: [
-    react(),
-    crx({ manifest }),
-    tailwindcss(),
-  ],
-})
-
+  plugins: [react(), crx({ manifest }), tailwindcss()],
+});
 ```
 
 ## 步骤四：创建 manifest.json
@@ -125,16 +120,12 @@ export default defineConfig({
 ```js
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {},
   },
   plugins: [],
-}
-
+};
 ```
 
 创建`src/index.css`并添加 Tailwind 指令：
@@ -168,21 +159,23 @@ touch src/background.ts
 
 ```js
 // 后台脚本，在扩展启动时执行
-console.log('Background script loaded');
+console.log("Background script loaded");
 
 // 监听扩展安装事件
-chrome.runtime.onInstalled.addListener((details) => {
-  console.log('Extension installed:', details.reason);
-  
+chrome.runtime.onInstalled.addListener(details => {
+  console.log("Extension installed:", details.reason);
+
   // 初始化存储
-  chrome.storage.local.set({ settings: { theme: 'light', notifications: true } });
+  chrome.storage.local.set({
+    settings: { theme: "light", notifications: true },
+  });
 });
 
 // 监听来自内容脚本或弹出窗口的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Received message:', message, 'from:', sender);
-  
-  if (message.type === 'GET_DATA') {
+  console.log("Received message:", message, "from:", sender);
+
+  if (message.type === "GET_DATA") {
     // 示例：获取数据并回复
     sendResponse({ success: true, data: { count: 42 } });
     return true; // 保持消息通道开放以进行异步响应
@@ -192,23 +185,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // 添加右键菜单
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
-    id: 'median-context-menu',
-    title: '使用 Median 处理此内容',
-    contexts: ['selection']
+    id: "median-context-menu",
+    title: "使用 Median 处理此内容",
+    contexts: ["selection"],
   });
 });
 
 // 处理右键菜单点击
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === 'median-context-menu' && info.selectionText) {
+  if (info.menuItemId === "median-context-menu" && info.selectionText) {
     // 将选中的文本发送到当前标签页
     chrome.tabs.sendMessage(tab.id, {
-      type: 'PROCESS_SELECTION',
-      text: info.selectionText
+      type: "PROCESS_SELECTION",
+      text: info.selectionText,
     });
   }
 });
-
 ```
 
 ### 3. 创建内容脚本 (content.ts)
@@ -247,43 +239,43 @@ function createFloatingButton() {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     user-select: none;
   `;
-  
+
   // 使按钮可拖动
   let isDragging = false;
   let startX: number, startY: number;
   let startLeft: number, startTop: number;
-  
+
   button.addEventListener('mousedown', (e) => {
     isDragging = true;
     startX = e.clientX;
     startY = e.clientY;
     startLeft = button.offsetLeft;
     startTop = button.offsetTop;
-  
+
     e.preventDefault();
   });
-  
+
   document.addEventListener('mousemove', (e) => {
     if (isDragging) {
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
-    
+
       button.style.right = `${document.documentElement.clientWidth - startLeft - button.offsetWidth - deltaX}px`;
       button.style.bottom = `${document.documentElement.clientHeight - startTop - button.offsetHeight - deltaY}px`;
     }
   });
-  
+
   document.addEventListener('mouseup', () => {
     isDragging = false;
   });
-  
+
   // 点击事件
   button.addEventListener('click', () => {
     if (!isDragging) {
       togglePanel();
     }
   });
-  
+
   return button;
 }
 
@@ -305,7 +297,7 @@ function createPanel() {
     flex-direction: column;
     overflow: hidden;
   `;
-  
+
   // 面板标题
   const header = document.createElement('div');
   header.style.cssText = `
@@ -321,7 +313,7 @@ function createPanel() {
     <span>Median 助手</span>
     <span style="cursor: pointer;" id="median-close">×</span>
   `;
-  
+
   // 面板内容
   const content = document.createElement('div');
   content.style.cssText = `
@@ -358,10 +350,10 @@ function createPanel() {
       ">提取信息</button>
     </div>
   `;
-  
+
   panel.appendChild(header);
   panel.appendChild(content);
-  
+
   // 关闭按钮事件
   setTimeout(() => {
     const closeBtn = document.getElementById('median-close');
@@ -370,7 +362,7 @@ function createPanel() {
         panel.style.display = 'none';
       });
     }
-  
+
     // 摘要按钮事件
     const summarizeBtn = document.getElementById('median-summarize');
     if (summarizeBtn) {
@@ -389,7 +381,7 @@ function createPanel() {
             margin-top: 16px;
           ">返回</button>
         </div>`;
-      
+
         setTimeout(() => {
           const backBtn = document.getElementById('median-back');
           if (backBtn) {
@@ -403,7 +395,7 @@ function createPanel() {
       });
     }
   }, 0);
-  
+
   return panel;
 }
 
@@ -460,7 +452,7 @@ function App() {
   });
   const [currentUrl, setCurrentUrl] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  
+
   // 获取设置和当前URL
   useEffect(() => {
     // 获取存储的设置
@@ -470,7 +462,7 @@ function App() {
       }
       setLoading(false);
     });
-  
+
     // 获取当前标签页URL
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0].url) {
@@ -478,14 +470,14 @@ function App() {
       }
     });
   }, []);
-  
+
   // 保存设置
   const saveSettings = (newSettings: SettingsType) => {
     chrome.storage.local.set({ settings: newSettings }, () => {
       setSettings(newSettings);
     });
   };
-  
+
   const recentItems = [
     { title: '已保存的网页', url: 'https://example.com/page1', time: '2小时前' },
     { title: '研究资料', url: 'https://example.com/page2', time: '昨天' },
@@ -498,21 +490,21 @@ function App() {
         <Title level={4}>Median</Title>
         <Text type="secondary">你的智能浏览助手</Text>
       </header>
-    
+
       <Tabs defaultActiveKey="1">
         <TabPane tab="主页" key="1">
           <Card className="current-card">
             <Text strong>当前页面:</Text>
             <Text>{currentUrl}</Text>
-          
+
             <div className="action-buttons">
               <Button type="primary">保存页面</Button>
               <Button>生成摘要</Button>
             </div>
           </Card>
-        
+
           <Divider orientation="left">最近活动</Divider>
-        
+
           <List
             size="small"
             dataSource={recentItems}
@@ -526,30 +518,30 @@ function App() {
             )}
           />
         </TabPane>
-      
+
         <TabPane tab="设置" key="2">
           <div className="settings-item">
             <Text>深色模式</Text>
-            <Switch 
-              checked={settings.theme === 'dark'} 
+            <Switch
+              checked={settings.theme === 'dark'}
               onChange={(checked) => saveSettings({
                 ...settings,
                 theme: checked ? 'dark' : 'light'
               })}
             />
           </div>
-        
+
           <div className="settings-item">
             <Text>通知</Text>
-            <Switch 
-              checked={settings.notifications} 
+            <Switch
+              checked={settings.notifications}
               onChange={(checked) => saveSettings({
                 ...settings,
                 notifications: checked
               })}
             />
           </div>
-        
+
           <div className="version-info">
             <Text type="secondary">版本: 1.0.0</Text>
           </div>
