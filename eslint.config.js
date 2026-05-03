@@ -14,5 +14,7 @@ export default [
     },
   },
   { rules: { "no-console": "error" } },
+  // build-time 脚本允许 console 输出
+  { files: ["scripts/**"], rules: { "no-console": "off" } },
   { ignores: ["dist/**", ".astro", "public/pagefind/**"] },
 ];
