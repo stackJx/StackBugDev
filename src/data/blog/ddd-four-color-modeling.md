@@ -191,6 +191,7 @@ public Response lockOrder(@RequestBody Request req) {
 > 💡 黄色事件的典型句式：「**X 已 Y**」、「**X 完成**」、「**X 发生**」（**过去时表达终态**）
 
 ```mermaid
+%%{init: {'flowchart': {'htmlLabels': false}}}%%
 flowchart LR
     A[拼团活动已创建]:::yellow
     B[人群标签已生成]:::yellow
@@ -230,6 +231,7 @@ flowchart LR
 > 💡 蓝色命令的典型句式：「**动词 + 名词**」，主动语气
 
 ```mermaid
+%%{init: {'flowchart': {'htmlLabels': false}}}%%
 flowchart LR
     C1[发起拼团]:::blue --> E1[用户拼单已发起]:::yellow
     C2[参与拼团]:::blue --> E2[用户已加入拼团]:::yellow
@@ -255,6 +257,7 @@ flowchart LR
 这一段编排就是「试算流程」，它本身是红色策略，内部又调度了绿色、粉色和子策略。落到代码里，对应 `domain/trade/service/logic/MarketTradeRuleFilter` 这一类责任链。
 
 ```mermaid
+%%{init: {'flowchart': {'htmlLabels': false}}}%%
 flowchart LR
     Cmd[🔵 发起拼团]:::blue
     Trial[🔴 试算流程]:::red
@@ -262,7 +265,7 @@ flowchart LR
     Q2[🟢 查折扣]:::green
     Q3[🟢 查人群标签]:::green
     Sku[🌸 商品中心 SKU]:::pink
-    Filter["🔴 责任链过滤<br/>交易规则"]:::redLight
+    Filter["🔴 责任链过滤\n交易规则"]:::redLight
     Lock[🔵 锁单]:::blue
     Event[🟡 用户拼单已发起]:::yellow
 
@@ -292,6 +295,7 @@ flowchart LR
 ### Step 4：补齐外部系统（粉色）和只读模型（绿色）
 
 ```mermaid
+%%{init: {'flowchart': {'htmlLabels': false}}}%%
 flowchart LR
     P1[🔴 试算流程] --> Q1[🟢 折扣配置]
     P1 --> Q2[🟢 人群标签]
