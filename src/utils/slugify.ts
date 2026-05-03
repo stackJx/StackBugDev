@@ -9,7 +9,10 @@ const hasNonLatin = (str: string): boolean => /[^\x00-\x7F]/.test(str);
  */
 export const slugifyStr = (str: string): string => {
   if (hasNonLatin(str)) {
-    return str.trim().toLowerCase().replace(/[\s_]+/g, "-");
+    return str
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_]+/g, "-");
   }
   return slugify(str, { lower: true });
 };
