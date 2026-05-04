@@ -12,6 +12,9 @@ import {
 import { transformerFileName } from "./src/utils/transformers/fileName";
 import { SITE } from "./src/config";
 
+const mermaidFontFamily =
+  '"Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", Arial, sans-serif';
+
 // https://astro.build/config
 export default defineConfig({
   site: SITE.website,
@@ -27,7 +30,27 @@ export default defineConfig({
       excludeLangs: ["mermaid"],
     },
     remarkPlugins: [remarkToc, [remarkCollapse, { test: "Table of contents" }]],
-    rehypePlugins: [[rehypeMermaid, { strategy: "img-svg", dark: true }]],
+    rehypePlugins: [
+      [
+        rehypeMermaid,
+        {
+          strategy: "img-svg",
+          mermaidConfig: {
+            fontFamily: mermaidFontFamily,
+            themeVariables: {
+              fontFamily: mermaidFontFamily,
+            },
+          },
+          dark: {
+            theme: "dark",
+            fontFamily: mermaidFontFamily,
+            themeVariables: {
+              fontFamily: mermaidFontFamily,
+            },
+          },
+        },
+      ],
+    ],
     shikiConfig: {
       // For more themes, visit https://shiki.style/themes
       themes: { light: "min-light", dark: "night-owl" },
