@@ -47,6 +47,10 @@
       @apply mx-auto border border-border;
     }
 
+    img.image-zoomable {
+      @apply cursor-zoom-in transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent focus-visible:outline-dashed;
+    }
+
     figcaption {
       @apply opacity-75;
     }

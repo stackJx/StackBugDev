@@ -79,6 +79,26 @@ html[data-theme="dark"] {
   @apply underline decoration-wavy decoration-2 underline-offset-8;
 }
 
+.image-lightbox {
+  @apply m-auto h-svh max-h-svh w-svw max-w-svw overflow-visible border-0 bg-transparent p-0 text-foreground;
+}
+
+.image-lightbox::backdrop {
+  @apply bg-black/80 backdrop-blur-sm;
+}
+
+.image-lightbox__surface {
+  @apply relative flex min-h-svh w-svw items-center justify-center p-4 sm:p-6;
+}
+
+.image-lightbox__close {
+  @apply absolute end-4 top-4 z-10 flex size-9 items-center justify-center border border-white/25 bg-black/65 text-2xl leading-none text-white hover:bg-black/85 sm:end-6 sm:top-6;
+}
+
+.image-lightbox__img {
+  @apply max-h-[calc(100svh-2rem)] max-w-[calc(100svw-2rem)] object-contain shadow-2xl sm:max-h-[calc(100svh-3rem)] sm:max-w-[calc(100svw-3rem)];
+}
+
 /* Source: https://piccalil.li/blog/a-more-modern-css-reset/ */
 /* Anything that has been anchored to should have extra scroll margin */
 :target {
