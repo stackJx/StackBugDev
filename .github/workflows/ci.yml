@@ -87,3 +87,42 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: pages deploy dist --project-name=stackbugdev --branch main
+
+  notify:
+    name: Notify deployment result
+    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: "📣 Push WeChat notification"
+        env:
+          WXPUSH_TOKEN: ${{ secrets.WXPUSH_TOKEN }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          if [ "$BUILD_RESULT" = "success" ] && [ "$DEPLOY_RESULT" = "success" ]; then
+            STATUS="部署成功"
+          elif [ "$BUILD_RESULT" != "success" ]; then
+            STATUS="构建失败（未部署）"
+          else
+            STATUS="部署失败"
+          fi
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+          FIRST_LINE=$(printf '%s' "$COMMIT_MSG" | head -n 1 | cut -c1-80)
+          TITLE="StackBugDev $STATUS"
+          CONTENT=$(printf '提交：%s %s\n作者：%s\n站点：https://stackbug.dev/\n日志：https://github.com/%s/actions/runs/%s' \
+            "$SHORT_SHA" "$FIRST_LINE" "$ACTOR" "$REPO" "$RUN_ID")
+          curl -sS --max-time 15 -o /tmp/wxpush_resp.json -w 'HTTP %{http_code}\n' \
+            --get \
+            --data-urlencode "token=$WXPUSH_TOKEN" \
+            --data-urlencode "title=$TITLE" \
+            --data-urlencode "content=$CONTENT" \
+            'https://wxpush.jiuxiaoer.workers.dev/wxsend'
+          cat /tmp/wxpush_resp.json
