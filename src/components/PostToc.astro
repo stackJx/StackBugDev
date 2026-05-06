@@ -1,0 +1,128 @@
+---
+// 文章详情页右侧浮动目录。
+// - 仅在 xl 及以上屏幕显示（CSS media query 控制），不挤占主列宽度。
+// - 客户端从 #article 内的 h2/h3[id] 提取目录。
+// - 通过 IntersectionObserver 高亮当前阅读到的小节。
+// - 文章无 h2/h3 时整体隐藏。
+---
+
+<aside id="post-toc-shell" class="post-toc" aria-label="本文目录">
+  <div class="post-toc__title">目录</div>
+  <nav id="post-toc">
+    <ol class="post-toc__list"></ol>
+  </nav>
+</aside>
+
+<script>
+  const SHELL_ID = "post-toc-shell";
+  const NAV_ID = "post-toc";
+  const ARTICLE_SELECTOR = "#article";
+
+  let activeObserver: IntersectionObserver | null = null;
+
+  function teardown() {
+    if (activeObserver) {
+      activeObserver.disconnect();
+      activeObserver = null;
+    }
+  }
+
+  function buildToc() {
+    teardown();
+
+    const shell = document.getElementById(SHELL_ID);
+    const nav = document.getElementById(NAV_ID);
+    if (!shell || !nav) return;
+
+    const article = document.querySelector<HTMLElement>(ARTICLE_SELECTOR);
+    if (!article) {
+      shell.style.display = "none";
+      return;
+    }
+
+    const headings = Array.from(
+      article.querySelectorAll<HTMLElement>("h2[id], h3[id]")
+    );
+
+    const ol = nav.querySelector("ol");
+    if (!ol) return;
+    ol.innerHTML = "";
+
+    if (headings.length === 0) {
+      shell.style.display = "none";
+      return;
+    }
+    shell.style.removeProperty("display");
+
+    const linkById = new Map<string, HTMLAnchorElement>();
+
+    for (const heading of headings) {
+      const id = heading.id;
+      if (!id) continue;
+      const text =
+        heading.dataset.tocText ??
+        heading.textContent?.replace(/#$/, "").trim() ??
+        "";
+
+      const li = document.createElement("li");
+      li.className =
+        heading.tagName === "H3"
+          ? "post-toc__item post-toc__item--h3"
+          : "post-toc__item";
+
+      const a = document.createElement("a");
+      a.href = `#${id}`;
+      a.textContent = text;
+      a.className = "post-toc__link";
+      a.title = text;
+
+      li.appendChild(a);
+      ol.appendChild(li);
+      linkById.set(id, a);
+    }
+
+    const visibleIds = new Set<string>();
+
+    function setActive(id: string | null) {
+      linkById.forEach((link, key) => {
+        link.classList.toggle("post-toc__link--active", key === id);
+      });
+    }
+
+    function pickActive(): string | null {
+      for (const heading of headings) {
+        if (visibleIds.has(heading.id)) return heading.id;
+      }
+      // 无可见标题时取最后一个滚过去的
+      for (let i = headings.length - 1; i >= 0; i--) {
+        if (headings[i].getBoundingClientRect().top < 100) {
+          return headings[i].id;
+        }
+      }
+      return null;
+    }
+
+    activeObserver = new IntersectionObserver(
+      entries => {
+        for (const entry of entries) {
+          const target = entry.target as HTMLElement;
+          if (entry.isIntersecting) visibleIds.add(target.id);
+          else visibleIds.delete(target.id);
+        }
+        setActive(pickActive());
+      },
+      {
+        rootMargin: "-80px 0px -55% 0px",
+        threshold: 0,
+      }
+    );
+
+    for (const heading of headings) {
+      activeObserver.observe(heading);
+    }
+  }
+
+  buildToc();
+  document.addEventListener("astro:page-load", buildToc);
+  document.addEventListener("astro:before-swap", teardown);
+</script>

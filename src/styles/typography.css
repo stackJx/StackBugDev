@@ -3,66 +3,73 @@
 @layer base {
   /* ===== Override default Tailwind Typography styles ===== */
   .app-prose {
-    @apply prose;
+    @apply prose max-w-none;
 
     h1,
     h2,
     h3,
     h4,
     th {
-      @apply mb-3 text-foreground;
+      @apply mb-4 mt-8 text-foreground font-semibold;
     }
 
     h3 {
-      @apply italic;
+      @apply text-lg;
     }
 
-    p,
+    p {
+      @apply text-foreground leading-relaxed mb-5;
+    }
+    
     strong,
     ol,
     ul,
     figcaption,
-    table,
-    code {
+    table {
       @apply text-foreground;
     }
 
     a {
-      @apply wrap-break-word text-foreground decoration-dashed underline-offset-4 hover:text-accent focus-visible:no-underline;
+      @apply wrap-break-word text-foreground decoration-dashed underline-offset-4 transition-all duration-300 hover:text-accent hover:decoration-solid focus-visible:no-underline;
     }
 
     ul {
-      @apply overflow-x-clip;
+      @apply overflow-x-clip mb-5 space-y-1;
     }
 
     li {
-      @apply marker:text-accent;
+      @apply marker:text-accent leading-relaxed;
     }
 
     hr {
-      @apply border-border;
+      @apply border-border my-8;
     }
 
     img {
-      @apply mx-auto border border-border;
+      @apply mx-auto border border-border rounded-md shadow-sm;
     }
 
     img.image-zoomable {
-      @apply cursor-zoom-in transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent focus-visible:outline-dashed;
+      @apply cursor-zoom-in transition-opacity duration-300 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent focus-visible:outline-dashed;
     }
 
     figcaption {
-      @apply opacity-75;
+      @apply opacity-75 text-sm mt-2;
     }
 
     table {
+      @apply w-full text-left border-collapse my-6;
       th,
       td {
-        @apply border border-border p-2;
+        @apply border border-border p-3 transition-colors duration-200;
       }
 
       th {
-        @apply py-1.5;
+        @apply py-2 bg-muted/10 font-medium;
+      }
+      
+      tr:hover td {
+        @apply bg-muted/5;
       }
 
       code {
@@ -71,15 +78,15 @@
     }
 
     code {
-      @apply rounded bg-muted/75 p-1 wrap-break-word text-foreground before:content-none after:content-none;
+      @apply rounded-md bg-muted/30 px-1.5 py-0.5 text-[0.875em] wrap-break-word text-foreground border border-border/50 before:content-none after:content-none font-medium;
     }
 
     .astro-code code {
-      @apply flex-[1_0_100%] bg-inherit p-0;
+      @apply flex-[1_0_100%] bg-inherit p-0 border-none font-normal text-[0.9em];
     }
 
     blockquote {
-      @apply border-s-accent/80 wrap-break-word opacity-80;
+      @apply border-s-4 border-s-accent/60 bg-muted/10 rounded-r-lg px-5 py-3 my-6 wrap-break-word opacity-90 text-foreground/90 italic;
     }
 
     details {
@@ -91,7 +98,7 @@
     }
 
     pre {
-      @apply focus-visible:border-transparent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-dashed;
+      @apply focus-visible:border-transparent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-dashed rounded-lg shadow-sm border border-border/50;
     }
   }
 

@@ -31,14 +31,14 @@ const isActive = (path: string) => {
 </a>
 
 <header
-  class="app-layout flex flex-col items-center justify-between sm:flex-row"
+  class="app-layout sticky top-0 z-40 bg-background/80 backdrop-blur-md flex flex-col items-center justify-between sm:flex-row transition-all duration-300"
 >
   <div
     id="top-nav-wrap"
     class:list={[
       "py-4 sm:py-6",
       "border-b border-border",
-      "relative w-full bg-background",
+      "relative w-full bg-transparent",
       "flex items-baseline justify-between sm:items-center",
     ]}
   >
