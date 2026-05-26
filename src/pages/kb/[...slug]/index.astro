@@ -1,0 +1,191 @@
+---
+import { type CollectionEntry, getCollection, render } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import KbSidebar from "@/components/KbSidebar.astro";
+import PostToc from "@/components/PostToc.astro";
+import BackButton from "@/components/BackButton.astro";
+import BackToTopButton from "@/components/BackToTopButton.astro";
+import Tag from "@/components/Tag.astro";
+import EditPost from "@/components/EditPost.astro";
+import IconCalendar from "@/assets/icons/IconCalendar.svg";
+import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
+import IconChevronRight from "@/assets/icons/IconChevronRight.svg";
+import { buildKbTree, getKbPath, getPrevNext } from "@/utils/getKbTree";
+import { slugifyStr } from "@/utils/slugify";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import { SITE } from "@/config";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+type Props = {
+  entry: CollectionEntry<"kb">;
+};
+
+export async function getStaticPaths() {
+  const entries = await getCollection("kb", ({ data }) => !data.draft);
+  return entries.map(entry => {
+    const path = getKbPath(entry).replace(/^\/kb\/?/, "");
+    return {
+      params: { slug: path || undefined },
+      props: { entry },
+    };
+  });
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+const all = await getCollection("kb");
+const categories = buildKbTree(all);
+const category =
+  categories.find(c => c.items.some(e => e.id === entry.id)) ?? categories[0];
+const { prev, next } = getPrevNext(category, entry);
+
+const { title, description, updated, created, tags, ogImage, hideEditPost } =
+  entry.data;
+
+const updatedAt = dayjs(updated).tz(SITE.timezone).format("YYYY[年]M[月]D[日]");
+const createdAt = created
+  ? dayjs(created).tz(SITE.timezone).format("YYYY[年]M[月]D[日]")
+  : null;
+
+let ogImageUrl: string | undefined;
+if (typeof ogImage === "string") {
+  ogImageUrl = ogImage;
+} else if (ogImage && "src" in ogImage) {
+  ogImageUrl = ogImage.src;
+}
+
+const resolvedOgImage = ogImageUrl
+  ? new URL(ogImageUrl, Astro.url.origin).href
+  : undefined;
+---
+
+<Layout
+  title={`${title} | ${SITE.title}`}
+  description={description}
+  pubDatetime={created ?? updated}
+  modDatetime={updated}
+  ogImage={resolvedOgImage}
+  scrollSmooth
+>
+  <Header />
+  <BackButton />
+  <main
+    id="main-content"
+    class:list={["app-layout pb-12", { "mt-8": !SITE.showBackButton }]}
+    data-pagefind-body
+  >
+    <div class="mb-2 text-sm opacity-70">
+      <a href="/kb" class="hover:text-accent">知识库</a>
+      <span aria-hidden="true">/</span>
+      {
+        category.indexEntry ? (
+          <a href={getKbPath(category.indexEntry)} class="hover:text-accent">
+            {category.name}
+          </a>
+        ) : (
+          <span>{category.name}</span>
+        )
+      }
+    </div>
+
+    <h1
+      transition:name={slugifyStr(title.replaceAll(".", "-"))}
+      class="inline-block text-2xl font-bold text-accent sm:text-3xl"
+    >
+      {title}
+    </h1>
+
+    <div
+      class="my-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm opacity-80"
+    >
+      <span class="inline-flex items-center gap-x-2">
+        <IconCalendar class="inline-block size-5" />
+        更新于 <time datetime={updated.toISOString()}>{updatedAt}</time>
+      </span>
+      {
+        createdAt && createdAt !== updatedAt && (
+          <span class="opacity-70">· 创建于 {createdAt}</span>
+        )
+      }
+      {
+        SITE.editPost.enabled && !hideEditPost && (
+          <>
+            <span aria-hidden="true" class="opacity-50 max-sm:hidden">
+              |
+            </span>
+            <EditPost {hideEditPost} post={entry} class="max-sm:hidden" />
+          </>
+        )
+      }
+    </div>
+
+    <p class="mt-3 opacity-85">{description}</p>
+
+    <article
+      id="article"
+      class="app-prose mt-8 w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
+    >
+      <Content />
+    </article>
+
+    {
+      tags.length > 0 && (
+        <ul class="mt-8 mb-8 flex flex-wrap gap-4">
+          {tags.map(tag => (
+            <Tag tag={slugifyStr(tag)} tagName={tag} size="sm" />
+          ))}
+        </ul>
+      )
+    }
+
+    <BackToTopButton />
+
+    <EditPost {hideEditPost} post={entry} class="mt-6 sm:hidden" />
+
+    <hr class="my-6 border-dashed" />
+
+    <div data-pagefind-ignore class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+      {
+        prev && (
+          <a href={getKbPath(prev)} class="flex w-full gap-1 hover:opacity-75">
+            <IconChevronLeft class="inline-block flex-none rtl:rotate-180" />
+            <div>
+              <span>上一篇</span>
+              <div class="text-sm text-accent/85">{prev.data.title}</div>
+            </div>
+          </a>
+        )
+      }
+      {
+        next && (
+          <a
+            href={getKbPath(next)}
+            class="flex w-full justify-end gap-1 text-end hover:opacity-75 sm:col-start-2"
+          >
+            <div>
+              <span>下一篇</span>
+              <div class="text-sm text-accent/85">{next.data.title}</div>
+            </div>
+            <IconChevronRight class="inline-block flex-none rtl:rotate-180" />
+          </a>
+        )
+      }
+    </div>
+  </main>
+
+  <KbSidebar categories={categories} currentId={entry.id} />
+  <PostToc />
+  <Footer />
+</Layout>
+
+<script>
+  import "@/scripts/post-enhancements";
+  import "@/scripts/reading-progress";
+</script>

@@ -1,0 +1,66 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Main from "@/layouts/Main.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import { buildKbTree, getKbPath } from "@/utils/getKbTree";
+import { SITE } from "@/config";
+
+const entries = await getCollection("kb");
+const categories = buildKbTree(entries);
+
+const totalEntries = categories.reduce(
+  (sum, c) => sum + c.sidebarItems.length,
+  0
+);
+
+const pageDesc =
+  categories.length === 0
+    ? "按主题组织、持续更新的体系化笔记。"
+    : `按主题组织、持续更新的体系化笔记。当前共 ${categories.length} 个分类、${totalEntries} 条目。`;
+---
+
+<Layout title={`知识库 | ${SITE.title}`}>
+  <Header />
+  <Main pageTitle="知识库" pageDesc={pageDesc}>
+    {
+      categories.length === 0 ? (
+        <p class="italic opacity-70">尚未有任何知识库内容。</p>
+      ) : (
+        <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {categories.map(category => {
+            const href = category.indexEntry
+              ? getKbPath(category.indexEntry)
+              : category.sidebarItems[0]
+                ? getKbPath(category.sidebarItems[0])
+                : `/kb/${category.slug}`;
+            return (
+              <li>
+                <a
+                  href={href}
+                  class:list={[
+                    "block h-full rounded-lg border border-border p-5",
+                    "transition-all duration-300",
+                    "hover:-translate-y-1 hover:border-accent/50 hover:bg-muted/20 hover:shadow-md",
+                  ]}
+                >
+                  <h2 class="text-lg font-semibold text-accent">
+                    {category.name}
+                  </h2>
+                  <p class="mt-2 line-clamp-3 text-sm opacity-80">
+                    {category.description || "暂无描述"}
+                  </p>
+                  <p class="mt-3 text-xs opacity-70">
+                    {category.sidebarItems.length} 条目
+                  </p>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )
+    }
+  </Main>
+  <Footer />
+</Layout>

@@ -1,0 +1,130 @@
+---
+import type { KbCategory } from "@/utils/getKbTree";
+import { getKbPath } from "@/utils/getKbTree";
+
+type Props = {
+  categories: KbCategory[];
+  /** 当前条目 id，用于高亮 */
+  currentId?: string;
+};
+
+const { categories, currentId } = Astro.props;
+---
+
+<aside id="kb-sidebar-shell" class="kb-sidebar" aria-label="知识库目录">
+  <button
+    id="kb-sidebar-toggle"
+    class="kb-sidebar__toggle"
+    type="button"
+    aria-expanded="false"
+    aria-controls="kb-sidebar-body"
+  >
+    <span>知识库目录</span>
+    <span aria-hidden="true" class="kb-sidebar__chevron">▾</span>
+  </button>
+  <nav id="kb-sidebar-body" class="kb-sidebar__body" hidden>
+    {
+      categories.map(category => {
+        const categoryHref = category.indexEntry
+          ? getKbPath(category.indexEntry)
+          : category.sidebarItems[0]
+            ? getKbPath(category.sidebarItems[0])
+            : `/kb/${category.slug}`;
+        return (
+          <section class="kb-sidebar__section">
+            <a
+              href={categoryHref}
+              class:list={[
+                "kb-sidebar__category",
+                {
+                  "kb-sidebar__category--active":
+                    !!category.indexEntry &&
+                    category.indexEntry.id === currentId,
+                },
+              ]}
+            >
+              {category.name}
+            </a>
+            {category.rootItems.length > 0 && (
+              <ul class="kb-sidebar__list">
+                {category.rootItems.map(entry => (
+                  <li>
+                    <a
+                      href={getKbPath(entry)}
+                      class:list={[
+                        "kb-sidebar__link",
+                        {
+                          "kb-sidebar__link--active": entry.id === currentId,
+                        },
+                      ]}
+                      title={entry.data.title}
+                    >
+                      {entry.data.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {category.subgroups.map(group => (
+              <div class="kb-sidebar__subgroup">
+                <div class="kb-sidebar__subgroup-name">{group.name}</div>
+                <ul class="kb-sidebar__list">
+                  {group.items.map(entry => (
+                    <li>
+                      <a
+                        href={getKbPath(entry)}
+                        class:list={[
+                          "kb-sidebar__link",
+                          {
+                            "kb-sidebar__link--active": entry.id === currentId,
+                          },
+                        ]}
+                        title={entry.data.title}
+                      >
+                        {entry.data.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </section>
+        );
+      })
+    }
+  </nav>
+</aside>
+
+<script>
+  function setupKbSidebar() {
+    const toggle = document.getElementById("kb-sidebar-toggle");
+    const body = document.getElementById("kb-sidebar-body");
+    if (!toggle || !body) return;
+
+    function applyMode() {
+      if (!toggle || !body) return;
+      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+      if (isDesktop) {
+        body.hidden = false;
+        toggle.setAttribute("aria-expanded", "true");
+      } else {
+        body.hidden = true;
+        toggle.setAttribute("aria-expanded", "false");
+      }
+    }
+
+    applyMode();
+
+    toggle.addEventListener("click", () => {
+      if (!body) return;
+      const willOpen = body.hidden;
+      body.hidden = !willOpen;
+      toggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    });
+
+    window.addEventListener("resize", applyMode);
+  }
+
+  setupKbSidebar();
+  document.addEventListener("astro:page-load", setupKbSidebar);
+</script>

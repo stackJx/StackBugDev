@@ -31,7 +31,7 @@ const isActive = (path: string) => {
 </a>
 
 <header
-  class="app-layout sticky top-0 z-40 bg-background/80 backdrop-blur-md flex flex-col items-center justify-between sm:flex-row transition-all duration-300"
+  class="sticky top-0 z-40 app-layout flex flex-col items-center justify-between bg-background/80 backdrop-blur-md transition-all duration-300 sm:flex-row"
 >
   <div
     id="top-nav-wrap"
@@ -74,6 +74,11 @@ const isActive = (path: string) => {
         <li class="col-span-2">
           <a href="/posts" class:list={{ "active-nav": isActive("/posts") }}>
             文章
+          </a>
+        </li>
+        <li class="col-span-2">
+          <a href="/kb" class:list={{ "active-nav": isActive("/kb") }}>
+            知识库
           </a>
         </li>
         <li class="col-span-2">

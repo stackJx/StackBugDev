@@ -13,7 +13,7 @@
 ```bash
 pnpm install              # 安装依赖
 pnpm run dev              # 在 localhost:4321 启动开发服务器
-pnpm run build            # astro check -> astro build -> pagefind --site dist -> 将 pagefind 拷贝到 public
+pnpm run build            # astro check -> astro build -> pagefind --site dist --force-language zh -> node scripts/copy-pagefind.mjs
 pnpm run preview          # 预览生产构建
 pnpm run sync             # 重新生成 astro:content / astro:env 类型（修改 schema 后运行）
 pnpm run lint             # eslint 检查
@@ -30,18 +30,25 @@ CI（`.github/workflows/ci.yml`）会在每个 PR 上执行 `lint`、`format:che
 `build` 脚本按顺序执行 **四** 个步骤：
 1. `astro check`（类型检查）
 2. `astro build`（产物输出到 `dist/`）
-3. `pagefind --site dist`（为构建出的 HTML 建立索引，写入 `dist/pagefind/`）
-4. `cp -r dist/pagefind public/`（将索引拷贝到 `public/`，以便后续 `dev` 运行时可用）
+3. `pagefind --site dist --force-language zh`（为构建出的 HTML 建立索引，写入 `dist/pagefind/`；`--force-language zh` 强制按中文分词，对中文站搜索质量很关键）
+4. `node scripts/copy-pagefind.mjs`（用 `fs.cpSync` 跨平台地把索引镜像到 `public/pagefind/`，并先 `rmSync` 清掉旧哈希文件，避免多次 build 残留累积）
 
 由此可知：**在至少执行过一次 `pnpm run build` 之前，搜索功能在 `pnpm run dev` 中不会生效。** `src/pages/search.astro` 在 dev 模式下会显示一条横幅提醒此事。不要试图在 dev 中"修复"搜索结果缺失的问题 —— 直接运行一次 build。
 
-`public/pagefind/` 已被 gitignore，且为自动生成产物，永远不要手动编辑。
+`public/pagefind/` 已被 gitignore，且为自动生成产物，永远不要手动编辑。也不要把 `scripts/copy-pagefind.mjs` 替换回 `cp -r` —— 那样在 Windows 上跑不通，并且不会清掉旧的带哈希文件。
 
 ## 架构
 
 ### 内容流水线
 
 - **Schema**：`src/content.config.ts` 通过 `glob({ pattern: "**/[^_]*.md", base: ./src/data/blog })` 定义 `blog` collection。以 `_` 开头的文件会被 loader 跳过。Zod schema 要求 `title`、`description`、`pubDatetime`；其余字段均为可选，默认值取自 `src/config.ts`。
+- **知识库 collection（`kb`）**：同文件里另定义一个 `kb` collection，源目录为 `src/data/kb/`。schema 必填 `title`、`description`、`updated`，并提供 `category`、`order`、`created`、`tags`、`hideInSidebar`、`hideEditPost` 等可选字段。约定：
+  - **目录即分类**：`src/data/kb/<category>/<entry>.md`，一级目录名即默认分类 slug。
+  - **二级目录即子分组**：`src/data/kb/<category>/<subgroup>/<entry>.md` 会在分类下以子分组形式聚合显示在侧边栏。子分组名由目录 slug 通过 `humanizeSubgroup` 推导（`system-design` → "System Design"）；子分组之间的顺序由其内首个条目的 `order` 决定。三级及更深的目录会被并入二级 subgroup（URL 仍保留全路径，例如 `interview/java/jvm/gc.md` → `/kb/interview/java/jvm/gc`，但在侧边栏归属为 `java` 子组）。
+  - **分类首页**：文件名为 `index.md` 的条目特殊处理 —— URL 为 `/kb/<category>`（而非 `/kb/<category>/index`），它的 `category` 字段会作为分类展示名，`description` 会作为 `/kb` 列表页的分类描述。通常把这个文件标记为 `hideInSidebar: true`。
+  - **排序**：`order` 越小越靠前，分类之间也用其 `index.md` 的 `order` 排序。
+  - **不要在 kb 中用 `pubDatetime`**：博客时间流与知识库互不感知；`/posts`、`/archives`、首页只读 `blog` collection。
+  - 修改任一 schema 后记得 `pnpm run sync` 重新生成 `astro:content` 类型。
 - **路径解析**：`src/utils/getPath.ts` 根据文章的 `id` + `filePath` 构建公开 URL。两条不易察觉的规则：
   - `src/data/blog/` 下的子目录会成为 URL 段（例如 `blog/2025/foo.md` → `/posts/2025/foo`）。
   - 以 `_` 为前缀的子目录会从 URL 中被剥离（例如 `blog/_drafts/foo.md` → `/posts/foo`）。可借此组织内容而不影响 URL。
@@ -55,6 +62,8 @@ CI（`.github/workflows/ci.yml`）会在每个 PR 上执行 `lint`、`format:che
 - `src/pages/posts/[...slug]/index.astro` —— 文章详情；使用 `getPath(id, filePath, false)` 构建路径，支持嵌套目录
 - `src/pages/posts/[...slug]/index.png.ts` —— 动态生成单篇文章 OG 图的端点（仅当 `SITE.dynamicOgImage` 为 true 且文章未显式指定 `ogImage` 时才输出路由）
 - `src/pages/tags/[tag]/[...page].astro` —— 分页的标签页，slug 来自 `getUniqueTags`
+- `src/pages/kb/index.astro` —— 知识库首页（分类卡片）
+- `src/pages/kb/[...slug]/index.astro` —— 知识库条目详情；路径由 `getKbPath` 推导（`index.md` → `/kb/<category>`，其他 → `/kb/<category>/<slug>`）。详情页布局为：左侧 `KbSidebar`（lg+ fixed）· 中央正文 · 右侧 `PostToc`（xl+ fixed）。
 - `src/pages/og.png.ts`、`rss.xml.ts`、`robots.txt.ts` —— 站点级别端点
 
 ### 动态 OG 图
