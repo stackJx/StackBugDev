@@ -10,7 +10,7 @@
     h3,
     h4,
     th {
-      @apply mb-4 mt-8 text-foreground font-semibold;
+      @apply mt-8 mb-4 font-semibold text-foreground;
     }
 
     h3 {
@@ -18,9 +18,9 @@
     }
 
     p {
-      @apply text-foreground leading-relaxed mb-5;
+      @apply mb-5 leading-relaxed text-foreground;
     }
-    
+
     strong,
     ol,
     ul,
@@ -34,19 +34,19 @@
     }
 
     ul {
-      @apply overflow-x-clip mb-5 space-y-1;
+      @apply mb-5 space-y-1 overflow-x-clip;
     }
 
     li {
-      @apply marker:text-accent leading-relaxed;
+      @apply leading-relaxed marker:text-accent;
     }
 
     hr {
-      @apply border-border my-8;
+      @apply my-8 border-border;
     }
 
     img {
-      @apply mx-auto border border-border rounded-md shadow-sm;
+      @apply mx-auto rounded-md border border-border shadow-sm;
     }
 
     img.image-zoomable {
@@ -54,20 +54,20 @@
     }
 
     figcaption {
-      @apply opacity-75 text-sm mt-2;
+      @apply mt-2 text-sm opacity-75;
     }
 
     table {
-      @apply w-full text-left border-collapse my-6;
+      @apply my-6 w-full border-collapse text-left;
       th,
       td {
         @apply border border-border p-3 transition-colors duration-200;
       }
 
       th {
-        @apply py-2 bg-muted/10 font-medium;
+        @apply bg-muted/10 py-2 font-medium;
       }
-      
+
       tr:hover td {
         @apply bg-muted/5;
       }
@@ -78,15 +78,15 @@
     }
 
     code {
-      @apply rounded-md bg-muted/30 px-1.5 py-0.5 text-[0.875em] wrap-break-word text-foreground border border-border/50 before:content-none after:content-none font-medium;
+      @apply rounded-md border border-border/50 bg-muted/30 px-1.5 py-0.5 text-[0.875em] font-medium wrap-break-word text-foreground before:content-none after:content-none;
     }
 
     .astro-code code {
-      @apply flex-[1_0_100%] bg-inherit p-0 border-none font-normal text-[0.9em];
+      @apply flex-[1_0_100%] border-none bg-inherit p-0 text-[0.9em] font-normal;
     }
 
     blockquote {
-      @apply border-s-4 border-s-accent/60 bg-muted/10 rounded-r-lg px-5 py-3 my-6 wrap-break-word opacity-90 text-foreground/90 italic;
+      @apply my-6 rounded-r-lg border-s-4 border-s-accent/60 bg-muted/10 px-5 py-3 wrap-break-word text-foreground/90 italic opacity-90;
     }
 
     details {
@@ -98,7 +98,7 @@
     }
 
     pre {
-      @apply focus-visible:border-transparent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-dashed rounded-lg shadow-sm border border-border/50;
+      @apply rounded-lg border border-border/50 shadow-sm focus-visible:border-transparent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-dashed;
     }
   }
 

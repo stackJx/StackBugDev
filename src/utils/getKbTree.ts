@@ -141,10 +141,7 @@ export function buildKbTree(entries: KbEntry[]): KbCategory[] {
     });
 
     // 扁平的侧边栏顺序，也供 getPrevNext 使用
-    const sidebarItems = [
-      ...rootItems,
-      ...subgroups.flatMap(g => g.items),
-    ];
+    const sidebarItems = [...rootItems, ...subgroups.flatMap(g => g.items)];
 
     const name = indexEntry?.data.category ?? indexEntry?.data.title ?? slug;
     const description = indexEntry?.data.description ?? "";

@@ -45,7 +45,10 @@ if (breadcrumbList[0] === "tags" && !isNaN(Number(breadcrumbList[2]))) {
           </li>
         ) : (
           <li>
-            <a href={`/${breadcrumbList.slice(0, index + 1).join("/")}/`} class="capitalize opacity-70">
+            <a
+              href={`/${breadcrumbList.slice(0, index + 1).join("/")}/`}
+              class="capitalize opacity-70"
+            >
               {breadcrumb}
             </a>
             <span aria-hidden="true">&raquo;</span>
