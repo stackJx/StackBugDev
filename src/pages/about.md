@@ -43,6 +43,10 @@ const profile = {
 - 🔄 CI/CD 实践
 - 🎯 系统设计与架构优化
 
+## 💬 交流群
+
+欢迎加入 [StackBug 技术交流群](https://t.me/+DarwX8UUxzpmODhk)，一起交流编程、架构与工程实践。
+
 ## 🚀 经验
 
 - 全栈开发，擅长 Java / PHP 后端
